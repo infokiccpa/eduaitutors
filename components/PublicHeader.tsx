@@ -5,6 +5,7 @@ import { motion, useScroll, useSpring } from 'framer-motion'
 import Link from 'next/link'
 import Image from 'next/image'
 import { ChevronDown, X, ArrowRight, Video, GraduationCap, BookOpen, HelpCircle, Trophy, Target, Smile, Star } from 'lucide-react'
+import PackagesSection from '@/components/PackagesSection'
 import { ToastContainer, toast } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
 
@@ -34,9 +35,9 @@ export default function PublicHeader() {
       description: 'Education Boards',
       subItems: ['CBSE', 'ICSE']
     },
-    {
+      {
       title: 'Packages',
-      href: '/packages',
+      href: '/#packages',
       image: 'https://images.unsplash.com/photo-1509062522246-3755977927d7?w=800',
       description: 'Learning Packages',
       subItems: ['Genius Package', 'Advanced Student Plan', 'Student Development Plan']
@@ -123,15 +124,13 @@ export default function PublicHeader() {
                   <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-primary-600 transition-all duration-300 group-hover:w-full"></span>
                 </button>
               </div>
-              <div
-                className="relative dropdown-container"
-              >
+              <div className="relative dropdown-container">
                 <button
                   className="flex items-center text-gray-700 hover:text-primary-600 font-medium transition-all duration-300 relative group"
-                  onClick={() => handleDropdownToggle('testimonials-section')}
+                  onClick={() => handleDropdownToggle('packages')}
                 >
-                  Testimonials
-                  <ChevronDown className={`ml-1 w-4 h-4 transition-transform duration-300 ${fullScreenDropdown === 'testimonials-section' ? 'rotate-180' : ''}`} />
+                  Packages
+                  <ChevronDown className={`ml-1 w-4 h-4 transition-transform duration-300 ${fullScreenDropdown === 'packages' ? 'rotate-180' : ''}`} />
                   <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-primary-600 transition-all duration-300 group-hover:w-full"></span>
                 </button>
               </div>
@@ -266,7 +265,7 @@ export default function PublicHeader() {
                       All Courses
                     </Link>
                     <Link
-                      href="/packages"
+                      href="/#packages"
                       onClick={handleDropdownClose}
                       className="text-gray-600 hover:text-primary-600 transition py-2"
                     >
@@ -280,11 +279,11 @@ export default function PublicHeader() {
                       How to Apply
                     </Link>
                     <Link
-                      href="#testimonials"
+                      href="/packages"
                       onClick={handleDropdownClose}
                       className="text-gray-600 hover:text-primary-600 transition py-2"
                     >
-                      Testimonials
+                      Packages
                     </Link>
                   </div>
                 </div>
@@ -303,6 +302,30 @@ export default function PublicHeader() {
                   </Link>
                 </div>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Packages Dropdown (compact teaser) */}
+      {fullScreenDropdown === 'packages' && (
+        <div
+          className="fixed inset-0 bg-white z-50 overflow-y-auto dropdown-content"
+          style={{ top: '80px' }}
+        >
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 animate-dropdown-enter">
+            <div className="mb-6 text-center">
+              <h2 className="text-2xl font-bold text-gray-900">Packages</h2>
+              <p className="text-gray-600 mt-1">Quick preview — open the full packages page for details</p>
+            </div>
+
+            <PackagesSection variant="compact" onLinkClick={handleDropdownClose} />
+
+            <div className="mt-6 text-center">
+              <Link href="/packages" onClick={handleDropdownClose} className="inline-flex items-center bg-primary-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-primary-700 transition">
+                View All Packages
+                <ArrowRight className="ml-2 w-5 h-5" />
+              </Link>
             </div>
           </div>
         </div>

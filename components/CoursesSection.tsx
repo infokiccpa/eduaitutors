@@ -172,7 +172,7 @@ export default function CoursesSection({ selectedBoard, setSelectedBoard, onSubj
           className="text-center mb-16"
         >
           <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">Available Courses</h2>
-          <p className="text-xl text-gray-600">Choose your board and explore our courses</p>
+          <p className="text-xl text-gray-600">Grade 9 - Grade 12</p>
         </motion.div>
 
         {/* Board Tabs */}
