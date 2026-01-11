@@ -17,7 +17,7 @@ export default function PublicFooter() {
                 alt="EduAiTutors - Path to Success"
                 width={320}
                 height={100}
-                className="h-24 w-auto"
+                className="h-24 w-auto brightness-0 invert"
               />
             </div>
             <p className="text-gray-400">
@@ -122,11 +122,6 @@ export default function PublicFooter() {
           <p>&copy; 2025-2026 Edu Altutors. All rights reserved. | Designed with ❤️ for Education</p>
         </div>
       </div>
-
-      {/* Chat / Help Floating Button */}
-      <button className="fixed bottom-6 right-6 w-14 h-14 bg-primary-600 hover:bg-primary-700 rounded-full shadow-lg flex items-center justify-center text-white transition-all hover:scale-110">
-        <MessageCircle className="w-6 h-6" />
-      </button>
     </footer>
   )
 }

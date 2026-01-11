@@ -51,7 +51,7 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-gray-50">
       <PublicHeader />
 
       {/* Hero Section */}
@@ -108,7 +108,7 @@ export default function Home() {
       {/* Why Study With Us */}
       <motion.section
         {...fadeIn}
-        className="py-20 bg-white"
+        className="bg-gray-50"
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
@@ -127,18 +127,29 @@ export default function Home() {
             {[
               { title: 'AI-Powered Learning', desc: 'Every course is designed around smart AI models that personalise practice, explain doubts and adapt to how you learn.', img: '/whystudy1.png' },
               { title: 'AI-Trained Tutors', desc: 'Human tutors are trained to work with AI tools, so you get both expert guidance and instant AI support in every session.', img: '/whystudy2.png' },
-              { title: 'Always-On Help', desc: 'Ask questions any time, get AI-powered explanations in seconds, and use our practice tools whenever you want to study.', img: '/whystudy3.png' },
+              { title: 'Always-On Help', desc: 'Ask questions any time, get AI-powered explanations in seconds, and use our practice tools whenever you want to study.', img: '/whystudy3.png', position: 'object-top' },
             ].map((item, idx) => (
               <motion.div
                 key={idx}
                 variants={cardVariants}
-                className="text-center p-6 rounded-2xl hover:bg-primary-50 transition-colors duration-300 group"
+                className="bg-white rounded-3xl overflow-hidden shadow-sm border border-gray-100 hover:shadow-xl transition-all duration-300 group flex flex-col h-full"
               >
-                <div className="mx-auto mb-4 w-20 h-20 flex items-center justify-center">
-                  <img src={item.img} alt={item.title} className="w-full h-full object-contain" />
+                <div className="h-64 overflow-hidden relative">
+                  <img
+                    src={item.img}
+                    alt={item.title}
+                    className={`w-full h-full object-cover ${item.position || 'object-center'} transition-transform duration-500 group-hover:scale-110`}
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-white via-transparent to-transparent opacity-0 group-hover:opacity-20 transition-opacity"></div>
                 </div>
-                <div className="text-lg font-semibold text-gray-900 mb-2">{item.title}</div>
-                <p className="text-gray-600">{item.desc}</p>
+                <div className="p-8 flex flex-col flex-grow">
+                  <h3 className="text-2xl font-bold text-gray-900 mb-3 group-hover:text-primary-600 transition-colors">
+                    {item.title}
+                  </h3>
+                  <p className="text-gray-600 leading-relaxed leading-relaxed">
+                    {item.desc}
+                  </p>
+                </div>
               </motion.div>
             ))}
           </motion.div>

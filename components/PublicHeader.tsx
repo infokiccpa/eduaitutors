@@ -6,8 +6,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { ChevronDown, X, ArrowRight, Video, GraduationCap, BookOpen, HelpCircle, Trophy, Target, Smile, Star } from 'lucide-react'
 import PackagesSection from '@/components/PackagesSection'
-import { ToastContainer, toast } from 'react-toastify'
-import 'react-toastify/dist/ReactToastify.css'
+import { toast } from 'react-toastify'
 
 export default function PublicHeader() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
@@ -35,7 +34,7 @@ export default function PublicHeader() {
       description: 'Education Boards',
       subItems: ['CBSE', 'ICSE']
     },
-      {
+    {
       title: 'Packages',
       href: '/#packages',
       image: 'https://images.unsplash.com/photo-1509062522246-3755977927d7?w=800',
@@ -65,7 +64,7 @@ export default function PublicHeader() {
           style={{ scaleX }}
         />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-24">
+          <div className="flex justify-between items-center h-28">
             <Link href="/" className="flex items-center space-x-3">
               <Image
                 src="/logo-eduaitutors.png"
@@ -137,25 +136,9 @@ export default function PublicHeader() {
 
               <div className="flex items-center space-x-4 ml-4">
                 <Link
-                  href="/login"
+                  href="/login?mode=signup"
                   className="text-gray-700 hover:text-primary-600 font-medium transition-all duration-300 relative group"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    handleDropdownClose();
-
-                    // Scroll to courses section
-                    const coursesSection = document.getElementById('courses');
-                    if (coursesSection) {
-                      coursesSection.scrollIntoView({ behavior: 'smooth' });
-                    }
-
-                    toast.info("Select course", {
-                      position: "top-right",
-                      progressClassName: "!bg-[#ea580c]",
-                      style: { background: 'white', color: '#374151' },
-                      icon: <span className="text-xl">⚠️</span>,
-                    });
-                  }}
+                  onClick={handleDropdownClose}
                 >
                   Register
                   <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-primary-600 transition-all duration-300 group-hover:w-full"></span>
@@ -185,7 +168,7 @@ export default function PublicHeader() {
       {/* Full Screen Dropdown - Oxford International Style with Large Image Cards */}
       {fullScreenDropdown === 'study' && (
         <div
-          className="fixed inset-0 bg-white z-50 overflow-y-auto dropdown-content"
+          className="fixed inset-0 bg-gray-50 z-50 overflow-y-auto dropdown-content"
           style={{ top: '80px' }}
         >
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 animate-dropdown-enter">
@@ -310,7 +293,7 @@ export default function PublicHeader() {
       {/* Packages Dropdown (compact teaser) */}
       {fullScreenDropdown === 'packages' && (
         <div
-          className="fixed inset-0 bg-white z-50 overflow-y-auto dropdown-content"
+          className="fixed inset-0 bg-gray-50 z-50 overflow-y-auto dropdown-content"
           style={{ top: '80px' }}
         >
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 animate-dropdown-enter">
@@ -334,7 +317,7 @@ export default function PublicHeader() {
       {/* About Dropdown */}
       {fullScreenDropdown === 'about' && (
         <div
-          className="fixed inset-0 bg-white z-50 overflow-y-auto dropdown-content"
+          className="fixed inset-0 bg-gray-50 z-50 overflow-y-auto dropdown-content"
           style={{ top: '80px' }}
         >
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 animate-dropdown-enter">
@@ -390,7 +373,7 @@ export default function PublicHeader() {
       {/* Features Dropdown */}
       {fullScreenDropdown === 'features' && (
         <div
-          className="fixed inset-0 bg-white z-50 overflow-y-auto dropdown-content"
+          className="fixed inset-0 bg-gray-50 z-50 overflow-y-auto dropdown-content"
           style={{ top: '80px' }}
         >
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 animate-dropdown-enter">
@@ -448,7 +431,7 @@ export default function PublicHeader() {
       {/* Testimonials Dropdown */}
       {fullScreenDropdown === 'testimonials-section' && (
         <div
-          className="fixed inset-0 bg-white z-50 overflow-y-auto dropdown-content"
+          className="fixed inset-0 bg-gray-50 z-50 overflow-y-auto dropdown-content"
           style={{ top: '80px' }}
         >
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 animate-dropdown-enter">
@@ -516,7 +499,7 @@ export default function PublicHeader() {
 
       {/* Mobile Menu */}
       {mobileMenuOpen && (
-        <div className="lg:hidden bg-white border-t fixed inset-0 z-50" style={{ top: '80px' }}>
+        <div className="lg:hidden bg-gray-50 border-t fixed inset-0 z-50" style={{ top: '80px' }}>
           <div className="px-4 py-4 space-y-3 h-full overflow-y-auto">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-bold text-gray-900">Menu</h3>
@@ -534,25 +517,9 @@ export default function PublicHeader() {
             <Link href="#testimonials" className="block text-gray-700 hover:text-primary-600 font-medium py-2" onClick={() => setMobileMenuOpen(false)}>Testimonials</Link>
             <div className="pt-4 border-t mt-4">
               <Link
-                href="/login"
+                href="/login?mode=signup"
                 className="block text-gray-700 hover:text-primary-600 font-medium mb-3 py-2"
-                onClick={(e) => {
-                  e.preventDefault();
-                  setMobileMenuOpen(false);
-
-                  // Scroll to courses
-                  const coursesSection = document.getElementById('courses');
-                  if (coursesSection) {
-                    coursesSection.scrollIntoView({ behavior: 'smooth' });
-                  }
-
-                  toast.info("Select course", {
-                    position: "top-right",
-                    progressClassName: "!bg-[#ea580c]",
-                    style: { background: 'white', color: '#374151' },
-                    icon: <span className="text-xl">⚠️</span>,
-                  });
-                }}
+                onClick={() => setMobileMenuOpen(false)}
               >
                 Register
               </Link>
@@ -563,7 +530,6 @@ export default function PublicHeader() {
           </div>
         </div>
       )}
-      <ToastContainer />
     </>
   )
 }

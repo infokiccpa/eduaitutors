@@ -32,9 +32,8 @@ export default function Sidebar() {
                 onClick={() => {
                   router.push(item.path)
                 }}
-                className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-all ${
-                  isActive ? 'bg-primary-600 text-white font-medium' : 'text-gray-300 hover:bg-primary-500/20 hover:text-white'
-                }`}
+                className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-all ${isActive ? 'bg-primary-600 text-white font-medium' : 'text-gray-300 hover:bg-primary-500/20 hover:text-white'
+                  }`}
               >
                 <Icon className="w-5 h-5" />
                 <span>{item.label}</span>
@@ -43,7 +42,13 @@ export default function Sidebar() {
           })}
         </nav>
         <div className="mt-8 pt-4 border-t border-secondary-800">
-          <button className="w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-red-400 hover:bg-red-900/30 hover:text-red-300 transition-all">
+          <button
+            onClick={() => {
+              localStorage.removeItem('currentUser')
+              router.push('/login')
+            }}
+            className="w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-red-400 hover:bg-red-900/30 hover:text-red-300 transition-all"
+          >
             <LogOut className="w-5 h-5" />
             <span>Logout</span>
           </button>

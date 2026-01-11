@@ -1,27 +1,76 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ArrowLeft, Mail, Lock, Eye, EyeOff, Github, Chrome, ShieldCheck } from 'lucide-react'
+import { ArrowLeft, Mail, Lock, Eye, EyeOff, Github, Chrome, ShieldCheck, User } from 'lucide-react'
+import { toast } from 'react-toastify'
+import { useSearchParams } from 'next/navigation'
 
-export default function Login() {
+import { Suspense } from 'react'
+
+function LoginForm() {
+  const searchParams = useSearchParams()
+  const mode = searchParams.get('mode')
+
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [name, setName] = useState('')
   const [showPassword, setShowPassword] = useState(false)
-  const [isLogin, setIsLogin] = useState(true)
+  const [isLogin, setIsLogin] = useState(mode !== 'signup')
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
+
+  useEffect(() => {
+    // Sync isLogin with mode param if it changes
+    setIsLogin(mode !== 'signup')
+  }, [mode])
+
+  useEffect(() => {
+    // Check if user is already logged in
+    const loggedInUser = localStorage.getItem('currentUser')
+    if (loggedInUser) {
+      router.push('/dashboard')
+    }
+  }, [router])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
-    // Simulate auth
+
+    // Simulate network delay
     setTimeout(() => {
-      setIsLoading(false)
-      router.push('/dashboard')
+      const users = JSON.parse(localStorage.getItem('users') || '[]')
+
+      if (isLogin) {
+        // Login Logic
+        const user = users.find((u: any) => u.email === email && u.password === password)
+        if (user) {
+          localStorage.setItem('currentUser', JSON.stringify(user))
+          toast.success('Welcome back! Logging you in...')
+          setTimeout(() => router.push('/dashboard'), 1000)
+        } else {
+          toast.error('Invalid email or password')
+          setIsLoading(false)
+        }
+      } else {
+        // Registration Logic
+        if (users.find((u: any) => u.email === email)) {
+          toast.error('Account already exists with this email')
+          setIsLoading(false)
+          return
+        }
+
+        const newUser = { name, email, password }
+        users.push(newUser)
+        localStorage.setItem('users', JSON.stringify(users))
+        localStorage.setItem('currentUser', JSON.stringify(newUser))
+
+        toast.success('Account created successfully!')
+        setTimeout(() => router.push('/dashboard'), 1000)
+      }
     }, 1500)
   }
 
@@ -45,7 +94,7 @@ export default function Login() {
               alt="EduAiTutors"
               width={350}
               height={120}
-              className="brightness-200"
+              className="object-contain brightness-0 invert"
             />
           </div>
 
@@ -95,6 +144,17 @@ export default function Login() {
           transition={{ duration: 0.6 }}
           className="w-full max-w-md"
         >
+          <div className="mb-8 block lg:hidden">
+            <Link href="/">
+              <Image
+                src="/logo-eduaitutors.png"
+                alt="EduAiTutors"
+                width={200}
+                height={64}
+                className="object-contain"
+              />
+            </Link>
+          </div>
           <div className="mb-8">
             <Link
               href="/"
@@ -115,6 +175,27 @@ export default function Login() {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-5">
+            {!isLogin && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+              >
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Full Name</label>
+                <div className="relative">
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <input
+                    type="text"
+                    required={!isLogin}
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    className="w-full pl-11 pr-4 py-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none transition-all shadow-sm"
+                    placeholder="Enter your full name"
+                  />
+                </div>
+              </motion.div>
+            )}
+
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">Email Address</label>
               <div className="relative">
@@ -209,6 +290,18 @@ export default function Login() {
         </motion.div>
       </div>
     </div>
+  )
+}
+
+export default function Login() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="w-12 h-12 border-4 border-primary-600 border-t-transparent rounded-full animate-spin" />
+      </div>
+    }>
+      <LoginForm />
+    </Suspense>
   )
 }
 

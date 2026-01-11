@@ -47,7 +47,7 @@ export default function EnrollmentForm({ selectedSubjects, onClose }: Enrollment
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+
     if (!validateForm()) {
       return
     }
@@ -63,12 +63,12 @@ export default function EnrollmentForm({ selectedSubjects, onClose }: Enrollment
       }
 
       console.log('Enrollment data:', enrollmentData)
-      
+
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1000))
-      
+
       alert('Enrollment submitted successfully!')
-      
+
       // Reset form
       setFormData({
         studentName: '',
@@ -91,7 +91,7 @@ export default function EnrollmentForm({ selectedSubjects, onClose }: Enrollment
   }, [])
 
   return (
-    <section id="register" className="py-20 bg-white">
+    <section id="register" className="py-20 bg-gray-50">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12">
           <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">Complete Your Registration</h2>

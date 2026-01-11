@@ -1,12 +1,27 @@
 'use client'
 
 import { Search, Bell, LogOut, Settings, User } from 'lucide-react'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 
 export default function Header() {
   const [searchQuery, setSearchQuery] = useState('')
+  const [user, setUser] = useState<{ name: string } | null>(null)
+  const router = useRouter()
+
+  useEffect(() => {
+    const loggedInUser = localStorage.getItem('currentUser')
+    if (loggedInUser) {
+      setUser(JSON.parse(loggedInUser))
+    }
+  }, [])
+
+  const handleLogout = () => {
+    localStorage.removeItem('currentUser')
+    router.push('/')
+  }
 
   return (
     <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-50">
@@ -47,21 +62,21 @@ export default function Header() {
 
             <div className="flex items-center space-x-4 pl-4 border-l border-gray-200">
               <div className="hidden text-right md:block">
-                <p className="text-sm font-bold text-gray-900">Kavi</p>
+                <p className="text-sm font-bold text-gray-900">{user?.name || 'User'}</p>
                 <p className="text-xs text-gray-500">Student Account</p>
               </div>
               <div className="relative group">
                 <button className="w-10 h-10 bg-gradient-to-br from-primary-500 to-primary-600 rounded-full flex items-center justify-center text-white font-bold shadow-lg transform group-hover:scale-110 transition cursor-pointer">
-                  K
+                  {user?.name ? user.name.charAt(0).toUpperCase() : 'U'}
                 </button>
               </div>
-              <Link
-                href="/"
+              <button
+                onClick={handleLogout}
                 className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition group"
                 title="Logout"
               >
                 <LogOut className="w-5 h-5" />
-              </Link>
+              </button>
             </div>
           </div>
         </div>

@@ -52,10 +52,12 @@ export default function PackagesSection({ variant = 'full', onLinkClick }: Props
 
   return (
     <section id="packages" className="relative">
-          <div className="w-full bg-gradient-to-r from-primary-600 to-secondary-900 py-10 mt-6">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-white">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-12">
+        <div className="w-full bg-gradient-to-r from-primary-600 to-secondary-900 py-10 rounded-3xl">
+          <div className="text-center text-white">
             <h2 className="text-2xl font-extrabold">Packages for <span className="text-amber-400">Grade 1 to 12</span></h2>
             <p className="mt-2 text-white/90">Choose the perfect learning plan tailored to your goals</p>
+          </div>
         </div>
       </div>
 
@@ -91,31 +93,36 @@ export default function PackagesSection({ variant = 'full', onLinkClick }: Props
             ))}
           </div>
 
-          <div className="w-full bg-gradient-to-r from-primary-600 to-secondary-900 py-10 mt-6">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-white">
-              <h3 className="text-2xl font-extrabold">Competitive Exams Packages</h3>
-              <p className="mt-2 text-white/90">Expert-led preparation for JEE, NEET, and State Entrance Exams</p>
-            </div>
-          </div>
+        </div>
+      </div>
 
-          <div className="py-10 bg-gray-50">
-            <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 grid md:grid-cols-2 gap-8">
-              <div className="bg-white rounded-2xl p-6 shadow-xl hover:shadow-2xl transition relative flex flex-col items-center text-center">
-                <div className="w-full h-40 bg-amber-50 rounded-t-2xl mb-4 overflow-hidden flex items-center justify-center">
-                  <img src={`/Packages/${encodeURIComponent('jee.png')}`} alt="JEE" className="w-full h-full object-cover" />
-                </div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">JEE Main & Advanced Mastery</h3>
-                <p className="text-gray-600 text-sm mb-4">For engineering aspirants aiming for top IITs and NITs. Comprehensive coverage of Physics, Chemistry, and Math with high-level problem-solving and mock assessments.</p>
-                <Link href="/packages" onClick={onLinkClick} className="inline-block bg-primary-600 text-white px-5 py-2 rounded-full text-sm font-medium">Choose Plan</Link>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-12">
+        <div className="w-full bg-gradient-to-r from-primary-600 to-secondary-900 py-10 rounded-3xl">
+          <div className="text-center text-white">
+            <h2 className="text-2xl font-extrabold">Competitive Exams <span className="text-amber-400">Packages</span></h2>
+            <p className="mt-2 text-white/90">Expert-led preparation for JEE, NEET, and State Entrance Exams</p>
+          </div>
+        </div>
+      </div>
+
+      <div className="-mt-6 pb-16 bg-transparent">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid md:grid-cols-2 gap-8 mt-20 relative z-20">
+            <div className="bg-white rounded-2xl p-6 shadow-xl hover:shadow-2xl transition relative flex flex-col items-center text-center">
+              <div className="w-full h-40 bg-amber-50 rounded-t-2xl mb-4 overflow-hidden flex items-center justify-center">
+                <img src={`/Packages/${encodeURIComponent('jee.png')}`} alt="JEE" className="w-full h-full object-cover" />
               </div>
-              <div className="bg-white rounded-2xl p-6 shadow-xl hover:shadow-2xl transition relative flex flex-col items-center text-center">
-                <div className="w-full h-40 bg-amber-50 rounded-t-2xl mb-4 overflow-hidden flex items-center justify-center">
-                  <img src={`/Packages/${encodeURIComponent('neet.png')}`} alt="NEET" className="w-full h-full object-cover" />
-                </div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">NEET Medical Prep</h3>
-                <p className="text-gray-600 text-sm mb-4">For aspiring doctors targeting top medical colleges. Deep dive into Biology, Physics, and Chemistry with NCERT-focused learning and extensive practice tests.</p>
-                <Link href="/packages" onClick={onLinkClick} className="inline-block bg-primary-600 text-white px-5 py-2 rounded-full text-sm font-medium">Choose Plan</Link>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">JEE Main & Advanced Mastery</h3>
+              <p className="text-gray-600 text-sm mb-4">For engineering aspirants aiming for top IITs and NITs. Comprehensive coverage of Physics, Chemistry, and Math with high-level problem-solving and mock assessments.</p>
+              <Link href="/packages" onClick={onLinkClick} className="inline-block bg-primary-600 text-white px-5 py-2 rounded-full text-sm font-medium">Choose Plan</Link>
+            </div>
+            <div className="bg-white rounded-2xl p-6 shadow-xl hover:shadow-2xl transition relative flex flex-col items-center text-center">
+              <div className="w-full h-40 bg-amber-50 rounded-t-2xl mb-4 overflow-hidden flex items-center justify-center">
+                <img src={`/Packages/${encodeURIComponent('neet.png')}`} alt="NEET" className="w-full h-full object-cover" />
               </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">NEET Medical Prep</h3>
+              <p className="text-gray-600 text-sm mb-4">For aspiring doctors targeting top medical colleges. Deep dive into Biology, Physics, and Chemistry with NCERT-focused learning and extensive practice tests.</p>
+              <Link href="/packages" onClick={onLinkClick} className="inline-block bg-primary-600 text-white px-5 py-2 rounded-full text-sm font-medium">Choose Plan</Link>
             </div>
           </div>
         </div>
