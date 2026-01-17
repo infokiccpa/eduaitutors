@@ -3,6 +3,8 @@ import { Inter } from 'next/font/google'
 import { ToastContainer } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
 import './globals.css'
+import { Providers } from '@/components/Providers'
+import ChatWidget from '@/components/ChatWidget'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -19,8 +21,11 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={inter.className}>
-        {children}
-        <ToastContainer position="top-right" autoClose={3000} />
+        <Providers>
+          {children}
+          <ChatWidget />
+          <ToastContainer position="top-right" autoClose={3000} />
+        </Providers>
       </body>
     </html>
   )

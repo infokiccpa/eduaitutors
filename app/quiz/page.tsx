@@ -4,91 +4,62 @@ import { useEffect, useState } from 'react'
 import Header from '@/components/Header'
 import Sidebar from '@/components/Sidebar'
 import { CheckCircle2, Clock, Trophy, Play } from 'lucide-react'
+import { useSession } from 'next-auth/react'
+import { useRouter } from 'next/navigation'
 
 export default function QuizPage() {
-  const [user, setUser] = useState<any>(null)
+  const { data: session, status } = useSession()
+  const router = useRouter()
 
   useEffect(() => {
-    const storedUser = localStorage.getItem('currentUser')
-    if (storedUser) {
-      setUser(JSON.parse(storedUser))
+    if (status === 'unauthenticated') {
+      router.push('/login')
     }
-  }, [])
+  }, [status, router])
 
-  const quizData: Record<string, any> = {
-    'Physics': [
-      {
-        title: 'Newton\'s Laws of Motion',
-        description: 'Test your understanding of the three fundamental laws that govern motion.',
-        questions: 15,
-        duration: '20 mins',
-        difficulty: 'Medium',
-        status: 'not-attempted'
-      },
-      {
-        title: 'Work, Energy & Power',
-        description: 'Challenge yourself with questions on work, energy conservation, and power calculations.',
-        questions: 12,
-        duration: '15 mins',
-        difficulty: 'Hard',
-        status: 'not-attempted'
+  const user = session?.user as any
+
+  if (status === 'loading') return null
+
+  const [quizzes, setQuizzes] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const fetchQuizzes = async () => {
+      if (user?.subjects) {
+        try {
+          const res = await fetch(`/api/quizzes?subjects=${user.subjects.join(',')}`)
+          const data = await res.json()
+          setQuizzes(data)
+        } catch (error) {
+          console.error('Error fetching quizzes:', error)
+        } finally {
+          setLoading(false)
+        }
+      } else {
+        setLoading(false)
       }
-    ],
-    'Chemistry': [
-      {
-        title: 'Periodic Table & Elements',
-        description: 'Assess your knowledge of periodic trends, element properties, and chemical families.',
-        questions: 20,
-        duration: '25 mins',
-        difficulty: 'Easy',
-        status: 'not-attempted'
-      },
-      {
-        title: 'Chemical Bonding',
-        description: 'Explore ionic, covalent, and metallic bonds through this comprehensive quiz.',
-        questions: 18,
-        duration: '22 mins',
-        difficulty: 'Medium',
-        status: 'not-attempted'
-      }
-    ],
-    'Biology': [
-      {
-        title: 'Cell Structure & Function',
-        description: 'Test your understanding of organelles, cell types, and cellular processes.',
-        questions: 16,
-        duration: '18 mins',
-        difficulty: 'Medium',
-        status: 'not-attempted'
-      },
-      {
-        title: 'Photosynthesis & Respiration',
-        description: 'Deep dive into the energy conversion processes in living organisms.',
-        questions: 14,
-        duration: '20 mins',
-        difficulty: 'Hard',
-        status: 'not-attempted'
-      }
-    ],
-    'Mathematics': [
-      {
-        title: 'Algebra Fundamentals',
-        description: 'Practice solving equations, inequalities, and algebraic expressions.',
-        questions: 25,
-        duration: '30 mins',
-        difficulty: 'Easy',
-        status: 'not-attempted'
-      },
-      {
-        title: 'Trigonometry Basics',
-        description: 'Master sine, cosine, tangent, and their applications in problem-solving.',
-        questions: 20,
-        duration: '28 mins',
-        difficulty: 'Medium',
-        status: 'not-attempted'
-      }
-    ]
+    }
+
+    if (status === 'authenticated') {
+      fetchQuizzes()
+    }
+  }, [status, user?.subjects])
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="w-12 h-12 border-4 border-primary-600 border-t-transparent rounded-full animate-spin" />
+      </div>
+    )
   }
+
+  // Group quizzes by subject
+  const groupedQuizzes = quizzes.reduce((acc: any, quiz: any) => {
+    if (!acc[quiz.subject]) acc[quiz.subject] = []
+    acc[quiz.subject].push(quiz)
+    return acc
+  }, {})
 
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
@@ -113,8 +84,8 @@ export default function QuizPage() {
           {user && user.subjects && user.subjects.length > 0 ? (
             <div className="space-y-8">
               {user.subjects.map((subject: string) => {
-                const quizzes = quizData[subject]
-                if (!quizzes) return null
+                const subjectQuizzes = groupedQuizzes[subject]
+                if (!subjectQuizzes) return null
 
                 return (
                   <div key={subject} className="bg-white rounded-[2.5rem] border border-slate-200 p-8 shadow-sm">
@@ -125,13 +96,13 @@ export default function QuizPage() {
                       </div>
                       <div className="bg-primary-50 px-4 py-2 rounded-xl">
                         <p className="text-xs font-bold text-primary-600 uppercase tracking-wider">
-                          {quizzes.length} Available
+                          {subjectQuizzes.length} Available
                         </p>
                       </div>
                     </div>
 
                     <div className="grid md:grid-cols-2 gap-4">
-                      {quizzes.map((quiz: any, idx: number) => (
+                      {subjectQuizzes.map((quiz: any, idx: number) => (
                         <div key={idx} className="group bg-slate-50 rounded-2xl p-6 border border-slate-100 hover:border-primary-200 hover:shadow-lg transition-all">
                           <div className="flex items-start justify-between mb-4">
                             <div className="flex-1">
@@ -149,7 +120,7 @@ export default function QuizPage() {
                               {quiz.duration}
                             </span>
                             <span className="px-3 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-700 border border-slate-200">
-                              {quiz.questions} Questions
+                              {quiz.questionsCount} Questions
                             </span>
                           </div>
 

@@ -1,249 +1,83 @@
 'use client'
 
-import { useState } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import React from 'react'
+import { motion } from 'framer-motion'
+import Link from 'next/link'
 
-interface Course {
-  subject: string
-  class: string
-  board: string
-  price: number
-  duration: string
-  days: string
-  time: string
-  starting: string
-  image: string
-}
-
-interface CoursesSectionProps {
-  selectedBoard: string
-  setSelectedBoard: (board: string) => void
-  onSubjectChange: (subjects: any[]) => void
-  onEnrollClick: () => void
-}
-
-export default function CoursesSection({ selectedBoard, setSelectedBoard, onSubjectChange, onEnrollClick }: CoursesSectionProps) {
-  const [selectedSubjects, setSelectedSubjects] = useState<Set<string>>(new Set())
-
-  const courses: Record<string, Record<string, Course[]>> = {
-    cbse: {
-      '9': [
-        { subject: 'Physics', class: '9', board: 'CBSE', price: 4999, duration: '180 Days', days: 'Mon, Wed, Fri', time: '4:00 PM - 5:30 PM', starting: '1st January 2026', image: 'https://images.unsplash.com/photo-1636466497217-26a8cbeaf0aa?w=400' },
-        { subject: 'Chemistry', class: '9', board: 'CBSE', price: 4999, duration: '180 Days', days: 'Tue, Thu, Sat', time: '5:30 PM - 7:00 PM', starting: '1st January 2026', image: 'https://images.unsplash.com/photo-1603126857599-f6e157fa2fe6?w=400' },
-        { subject: 'Biology', class: '9', board: 'CBSE', price: 4999, duration: '180 Days', days: 'Mon, Wed, Fri', time: '7:00 PM - 8:30 PM', starting: '1st January 2026', image: 'https://images.unsplash.com/photo-1576086213369-97a306d36557?w=400' },
-        { subject: 'Mathematics', class: '9', board: 'CBSE', price: 4999, duration: '180 Days', days: 'Tue, Thu, Sat', time: '4:00 PM - 5:30 PM', starting: '1st January 2026', image: 'https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=400' },
-      ],
-      '10': [
-        { subject: 'Physics', class: '10', board: 'CBSE', price: 5999, duration: '200 Days', days: 'Mon, Wed, Fri', time: '6:00 PM - 7:30 PM', starting: '1st January 2026', image: 'https://images.unsplash.com/photo-1636466497217-26a8cbeaf0aa?w=400' },
-        { subject: 'Chemistry', class: '10', board: 'CBSE', price: 5999, duration: '200 Days', days: 'Tue, Thu, Sat', time: '6:00 PM - 7:30 PM', starting: '1st January 2026', image: 'https://images.unsplash.com/photo-1603126857599-f6e157fa2fe6?w=400' },
-        { subject: 'Biology', class: '10', board: 'CBSE', price: 5999, duration: '200 Days', days: 'Mon, Wed, Fri', time: '7:30 PM - 9:00 PM', starting: '1st January 2026', image: 'https://images.unsplash.com/photo-1576086213369-97a306d36557?w=400' },
-        { subject: 'Mathematics', class: '10', board: 'CBSE', price: 5999, duration: '200 Days', days: 'Tue, Thu, Sat', time: '5:00 PM - 6:30 PM', starting: '1st January 2026', image: 'https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=400' },
-      ],
-    },
-    icse: {
-      '9': [
-        { subject: 'Physics', class: '9', board: 'ICSE', price: 5499, duration: '180 Days', days: 'Mon, Wed, Fri', time: '3:00 PM - 4:30 PM', starting: '1st January 2026', image: 'https://images.unsplash.com/photo-1636466497217-26a8cbeaf0aa?w=400' },
-        { subject: 'Chemistry', class: '9', board: 'ICSE', price: 5499, duration: '180 Days', days: 'Tue, Thu, Sat', time: '4:30 PM - 6:00 PM', starting: '1st January 2026', image: 'https://images.unsplash.com/photo-1603126857599-f6e157fa2fe6?w=400' },
-        { subject: 'Biology', class: '9', board: 'ICSE', price: 5499, duration: '180 Days', days: 'Mon, Wed, Fri', time: '6:00 PM - 7:30 PM', starting: '1st January 2026', image: 'https://images.unsplash.com/photo-1576086213369-97a306d36557?w=400' },
-        { subject: 'Mathematics', class: '9', board: 'ICSE', price: 5499, duration: '180 Days', days: 'Tue, Thu, Sat', time: '3:00 PM - 4:30 PM', starting: '1st January 2026', image: 'https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=400' },
-      ],
-      '10': [
-        { subject: 'Physics', class: '10', board: 'ICSE', price: 6499, duration: '200 Days', days: 'Mon, Wed, Fri', time: '5:00 PM - 6:30 PM', starting: '1st January 2026', image: 'https://images.unsplash.com/photo-1636466497217-26a8cbeaf0aa?w=400' },
-        { subject: 'Chemistry', class: '10', board: 'ICSE', price: 6499, duration: '200 Days', days: 'Tue, Thu, Sat', time: '5:00 PM - 6:30 PM', starting: '1st January 2026', image: 'https://images.unsplash.com/photo-1603126857599-f6e157fa2fe6?w=400' },
-        { subject: 'Biology', class: '10', board: 'ICSE', price: 6499, duration: '200 Days', days: 'Mon, Wed, Fri', time: '6:30 PM - 8:00 PM', starting: '1st January 2026', image: 'https://images.unsplash.com/photo-1576086213369-97a306d36557?w=400' },
-        { subject: 'Mathematics', class: '10', board: 'ICSE', price: 6499, duration: '200 Days', days: 'Tue, Thu, Sat', time: '4:00 PM - 5:30 PM', starting: '1st January 2026', image: 'https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=400' },
-      ],
-    },
-  }
-
-  const getSubjectKey = (course: Course) => `${course.board}-${course.class}-${course.subject}`
-
-  const handleSubjectToggle = (course: Course) => {
-    const key = getSubjectKey(course)
-    const newSelected = new Set(selectedSubjects)
-
-    if (newSelected.has(key)) {
-      newSelected.delete(key)
-    } else {
-      newSelected.add(key)
-    }
-
-    setSelectedSubjects(newSelected)
-
-    // Convert to array format for parent
-    const subjectsArray = Array.from(newSelected).map(key => {
-      const [board, classNum, subject] = key.split('-')
-      const courseData = courses[board.toLowerCase()][classNum].find(c => c.subject === subject)
-      return courseData
-    }).filter(Boolean)
-
-    onSubjectChange(subjectsArray)
-  }
-
-  const getGradientColor = (index: number) => {
-    const colors = [
-      'from-blue-400 to-blue-600',
-      'from-primary-400 to-primary-600',
-      'from-green-400 to-green-600',
-      'from-orange-400 to-orange-600',
-    ]
-    return colors[index % 4]
-  }
-
-  const getAccentColor = (index: number) => {
-    const colors = [
-      'text-blue-600',
-      'text-primary-600',
-      'text-green-600',
-      'text-orange-600',
-    ]
-    return colors[index % 4]
-  }
-
-  const renderCourseCard = (course: Course, index: number) => {
-    const key = getSubjectKey(course)
-    const isSelected = selectedSubjects.has(key)
-    const gradient = getGradientColor(index)
-    const accent = getAccentColor(index)
-
-    return (
-      <motion.div
-        key={key}
-        layout
-        initial={{ opacity: 0, scale: 0.9 }}
-        whileInView={{ opacity: 1, scale: 1 }}
-        viewport={{ once: true }}
-        transition={{ duration: 0.4 }}
-        className="bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2"
-      >
-        <div className={`h-48 bg-gradient-to-br ${gradient} relative overflow-hidden`}>
-          <motion.img
-            whileHover={{ scale: 1.1 }}
-            transition={{ duration: 0.6 }}
-            src={course.image}
-            alt={course.subject}
-            className="w-full h-full object-cover"
-            onError={(e) => {
-              const target = e.target as HTMLImageElement
-              target.src = 'https://images.unsplash.com/photo-1636466497217-26a8cbeaf0aa?w=400'
-            }}
-          />
-        </div>
-        <div className="p-6">
-          <h4 className="text-2xl font-bold text-gray-900 mb-4">{course.subject}</h4>
-          <div className="space-y-2 mb-4">
-            <p className="text-sm text-gray-600">
-              <span className={`font-semibold ${accent}`}>Duration:</span> {course.duration}
-            </p>
-            <p className="text-sm text-gray-600">
-              <span className={`font-semibold ${accent}`}>Days:</span> {course.days}
-            </p>
-            <p className="text-sm text-gray-600">
-              <span className={`font-semibold ${accent}`}>Time:</span> {course.time}
-            </p>
-            <p className="text-sm text-gray-600">
-              <span className={`font-semibold ${accent}`}>Starting:</span> {course.starting}
-            </p>
-          </div>
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <span className={`text-2xl font-bold ${accent}`}>₹{course.price.toLocaleString()}</span>
-              <span className="text-gray-500 line-through ml-2 text-sm">₹{(course.price * 1.6).toFixed(0)}</span>
-            </div>
-            <input
-              type="checkbox"
-              checked={isSelected}
-              onChange={() => handleSubjectToggle(course)}
-              className={`w-6 h-6 ${accent} rounded border-gray-300 focus:ring-2 focus:ring-primary-500 cursor-pointer`}
-            />
-          </div>
-        </div>
-      </motion.div>
-    )
-  }
-
+export default function CoursesSection() {
   return (
-    <section id="courses" className="py-20 bg-gray-50 overflow-hidden">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <section id="courses" className="py-16 bg-white overflow-hidden relative">
+      <div className="max-w-7xl mx-auto px-6 lg:px-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="text-center mb-16"
+          className="relative group cursor-pointer"
         >
-          <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">Available Courses</h2>
-          <p className="text-xl text-gray-600">Grade 9 - Grade 12</p>
+          <Link href="/courses">
+            <div className="bg-slate-900 rounded-[2.5rem] p-10 md:p-14 overflow-hidden relative shadow-2xl hover:shadow-primary-600/20 transition-all duration-700">
+              {/* Decorative backgrounds */}
+              <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-primary-600/20 rounded-full blur-[100px] -mr-48 -mt-48" />
+              <div className="absolute bottom-0 left-0 w-[300px] h-[300px] bg-blue-600/10 rounded-full blur-[80px] -ml-32 -mb-32" />
+
+              <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-10">
+                <div className="text-center md:text-left">
+                  <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-white/5 border border-white/10 rounded-full text-primary-400 text-[9px] font-black uppercase tracking-[0.3em] mb-6">
+                    Academic Excellence
+                  </div>
+                  <h2 className="text-3xl md:text-5xl font-black text-white mb-5 tracking-tighter leading-tight">
+                    Explore Our <br />
+                    <span className="text-primary-500 italic">Available Courses.</span>
+                  </h2>
+                  <p className="text-base text-slate-400 font-medium max-w-md mb-8">
+                    Standardized curriculum for Grade 1-12 across CBSE and ICSE boards, designed for holistic learning.
+                  </p>
+                  <button className="px-8 py-4 bg-white text-slate-900 rounded-xl font-black uppercase tracking-widest text-xs hover:bg-primary-50 transition-colors shadow-lg group-hover:scale-105 duration-500">
+                    View All Courses
+                  </button>
+                </div>
+
+                <div className="relative w-full max-w-[400px] aspect-square hidden lg:block">
+                  <div className="absolute inset-0 bg-primary-600 rounded-[3rem] rotate-3 group-hover:rotate-6 transition-transform duration-700 opacity-10 blur-xl" />
+
+                  <div className="absolute inset-0 bg-white/5 backdrop-blur-3xl rounded-[3rem] p-8 border border-white/10 shadow-3xl flex flex-col">
+                    <div className="grid grid-cols-2 gap-4 flex-1">
+                      {[
+                        { img: '/course_math_thumbnail.png', color: 'from-orange-500/20' },
+                        { img: '/course_science_thumbnail.png', color: 'from-blue-500/20' },
+                        { img: '/course_coding_thumbnail.png', color: 'from-purple-500/20' },
+                        { img: '/course_history_thumbnail.png', color: 'from-emerald-500/20' }
+                      ].map((item, i) => (
+                        <div key={i} className={`relative rounded-2xl overflow-hidden shadow-2xl group/thumb bg-gradient-to-br ${item.color} to-transparent border border-white/5`}>
+                          <img
+                            src={item.img}
+                            alt={`Course ${i}`}
+                            className="w-full h-full object-cover mix-blend-overlay group-hover/thumb:mix-blend-normal transition-all duration-500 group-hover/thumb:scale-110"
+                          />
+                          <div className="absolute inset-0 bg-black/20 group-hover/thumb:bg-transparent transition-colors" />
+                        </div>
+                      ))}
+                    </div>
+
+                    <motion.div
+                      animate={{ scale: [1, 1.05, 1] }}
+                      transition={{ duration: 2, repeat: Infinity }}
+                      className="mt-8 p-4 bg-primary-600 rounded-2xl shadow-[0_10px_30px_-5px_rgba(234,88,12,0.5)] text-center border border-white/20"
+                    >
+                      <p className="text-white font-black uppercase tracking-[0.2em] text-[10px]">Adaptive Learning Active</p>
+                    </motion.div>
+                  </div>
+
+                  {/* Floating badge */}
+                  <div className="absolute -top-6 -right-6 bg-white p-4 rounded-2xl shadow-2xl border border-slate-100 rotate-12 group-hover:rotate-0 transition-transform duration-500">
+                    <p className="text-[10px] font-black text-primary-600 uppercase tracking-widest">Premium Content</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </Link>
         </motion.div>
-
-        {/* Board Tabs */}
-        <div className="flex justify-center mb-12">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            whileInView={{ opacity: 1, scale: 1 }}
-            viewport={{ once: true }}
-            className="inline-flex bg-white rounded-full shadow-lg p-2"
-          >
-            <button
-              onClick={() => {
-                setSelectedBoard('cbse')
-                setSelectedSubjects(new Set())
-                onSubjectChange([])
-              }}
-              className={`px-8 py-3 rounded-full font-bold text-lg transition-all duration-300 ${selectedBoard === 'cbse'
-                  ? 'bg-gradient-to-r from-primary-600 to-primary-700 text-white'
-                  : 'text-gray-600 hover:text-primary-600'
-                }`}
-            >
-              CBSE
-            </button>
-            <button
-              onClick={() => {
-                setSelectedBoard('icse')
-                setSelectedSubjects(new Set())
-                onSubjectChange([])
-              }}
-              className={`px-8 py-3 rounded-full font-bold text-lg transition-all duration-300 ${selectedBoard === 'icse'
-                  ? 'bg-gradient-to-r from-primary-600 to-primary-700 text-white'
-                  : 'text-gray-600 hover:text-primary-600'
-                }`}
-            >
-              ICSE
-            </button>
-          </motion.div>
-        </div>
-
-        {/* Course Grids */}
-        <AnimatePresence mode="wait">
-          {(['9', '10'] as const).map((classNum) => (
-            <motion.div
-              key={`${selectedBoard}-${classNum}`}
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              transition={{ duration: 0.4 }}
-              className="mb-16"
-            >
-              <h3 className="text-3xl font-bold text-gray-900 mb-8 text-center uppercase tracking-widest border-b-2 border-primary-100 pb-4 w-fit mx-auto">
-                Class {classNum}th - {selectedBoard.toUpperCase()}
-              </h3>
-              <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-                {courses[selectedBoard][classNum].map((course, index) => renderCourseCard(course, index))}
-              </div>
-              <div className="text-center mt-16">
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={onEnrollClick}
-                  className="bg-gradient-to-r from-primary-600 to-primary-700 text-white px-12 py-4 rounded-full font-bold text-lg hover:shadow-xl transition transform shadow-lg"
-                >
-                  Enroll Now <span className="ml-2">→</span>
-                </motion.button>
-              </div>
-            </motion.div>
-          ))}
-        </AnimatePresence>
       </div>
     </section>
   )
 }
-

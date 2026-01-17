@@ -15,22 +15,59 @@ import {
   Zap
 } from 'lucide-react'
 import { motion } from 'framer-motion'
+import { useSession } from 'next-auth/react'
+import { useRouter } from 'next/navigation'
 
 export default function ProgressPage() {
-  const [user, setUser] = useState<any>(null)
+  const { data: session, status } = useSession()
+  const router = useRouter()
 
   useEffect(() => {
-    const storedUser = localStorage.getItem('currentUser')
-    if (storedUser) {
-      setUser(JSON.parse(storedUser))
+    if (status === 'unauthenticated') {
+      router.push('/login')
     }
-  }, [])
+  }, [status, router])
+
+  const user = session?.user as any
+
+  if (status === 'loading') return null
+
+  const [activities, setActivities] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const fetchActivities = async () => {
+      try {
+        const res = await fetch('/api/activities')
+        if (res.ok) {
+          const data = await res.json()
+          setActivities(data)
+        }
+      } catch (error) {
+        console.error('Error fetching activities:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    if (status === 'authenticated') {
+      fetchActivities()
+    }
+  }, [status])
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="w-12 h-12 border-4 border-primary-600 border-t-transparent rounded-full animate-spin" />
+      </div>
+    )
+  }
 
   const stats = [
     { label: 'Overall Progress', value: '42%', icon: BarChart3, color: 'text-blue-600', bg: 'bg-blue-50' },
-    { label: 'Average Score', value: '88%', icon: Target, color: 'text-emerald-600', bg: 'bg-emerald-50' },
+    { label: 'Average Score', value: activities.length > 0 ? '88%' : '0%', icon: Target, color: 'text-emerald-600', bg: 'bg-emerald-50' },
     { label: 'Study Hours', value: '124h', icon: Clock, color: 'text-amber-600', bg: 'bg-amber-50' },
-    { label: 'Achievements', value: '12', icon: Award, color: 'text-purple-600', bg: 'bg-purple-50' },
+    { label: 'Achievements', value: activities.filter(a => a.type === 'achievement').length.toString(), icon: Award, color: 'text-purple-600', bg: 'bg-purple-50' },
   ]
 
   const subjectProgress = [
@@ -40,7 +77,7 @@ export default function ProgressPage() {
     { name: 'Biology', progress: 30, color: 'bg-purple-500', icon: '🧬' },
   ]
 
-  const recentActivity = [
+  const recentActivity = activities.length > 0 ? activities : [
     { title: 'Completed Quiz: Newton\'s Laws', subject: 'Physics', time: '2 hours ago', score: '95%', type: 'quiz' },
     { title: 'Watched Video: Atomic Structure', subject: 'Chemistry', time: '5 hours ago', type: 'lesson' },
     { title: 'Earned Badge: Weekend Warrior', subject: 'General', time: 'Yesterday', type: 'achievement' },

@@ -7,7 +7,7 @@ interface EnrollmentFormProps {
   onClose: () => void
 }
 
-export default function EnrollmentForm({ selectedSubjects, onClose }: EnrollmentFormProps) {
+export default function EnrollmentForm({ selectedSubjects = [], onClose }: EnrollmentFormProps) {
   const [formData, setFormData] = useState({
     studentName: '',
     phone: '',

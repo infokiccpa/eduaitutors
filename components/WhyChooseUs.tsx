@@ -4,7 +4,7 @@ export default function WhyChooseUs() {
   return (
     <section className="mb-12">
       <h2 className="text-2xl font-bold text-gray-900 mb-6">Why Choose Edu Altutors?</h2>
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+      <div className="bg-primary-50 rounded-xl shadow-sm border border-gray-200 overflow-hidden">
         <div className="md:flex">
           <div className="md:w-1/2 h-64 bg-gradient-to-br from-primary-400 to-secondary-800 flex items-center justify-center text-6xl">🎯</div>
           <div className="md:w-1/2 p-8">

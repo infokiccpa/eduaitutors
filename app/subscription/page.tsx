@@ -6,17 +6,20 @@ import Header from '@/components/Header'
 import Sidebar from '@/components/Sidebar'
 import { motion } from 'framer-motion'
 import { Sparkles, Calendar, BookOpen, GraduationCap, CheckCircle2, ShieldCheck, Clock, ArrowRight } from 'lucide-react'
+import { useSession } from 'next-auth/react'
 
 export default function SubscriptionPage() {
   const router = useRouter()
-  const [user, setUser] = useState<any>(null)
+  const { data: session, status } = useSession()
+  const user = session?.user as any
 
   useEffect(() => {
-    const storedUser = localStorage.getItem('currentUser')
-    if (storedUser) {
-      setUser(JSON.parse(storedUser))
+    if (status === 'unauthenticated') {
+      router.push('/login')
     }
-  }, [])
+  }, [status, router])
+
+  if (status === 'loading') return null
 
   return (
     <div className="min-h-screen bg-[#F8FAFC]">

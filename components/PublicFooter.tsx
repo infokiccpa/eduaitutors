@@ -6,120 +6,122 @@ import Image from 'next/image'
 
 export default function PublicFooter() {
   return (
-    <footer className="bg-gray-900 text-white mt-12">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="grid md:grid-cols-4 gap-8 mb-8">
-          {/* Brand & Social */}
-          <div>
-            <div className="flex items-center mb-4">
+    <footer className="relative text-white overflow-hidden mt-20">
+      {/* Background Image with sophisticated overlay */}
+      <div className="absolute inset-0 z-0">
+        <Image
+          src="https://images.unsplash.com/photo-1497633762265-9d179a990aa6?q=80&w=2073&auto=format&fit=crop"
+          alt="Atmospheric Background"
+          fill
+          className="object-cover opacity-30"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/70 to-black/60" />
+      </div>
+
+      <div className="max-w-[1440px] mx-auto px-6 md:px-12 lg:px-20 py-24 relative z-10">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-16 mb-20">
+          {/* Brand Section */}
+          <div className="space-y-8">
+            <Link href="/" className="inline-block">
               <Image
                 src="/logo-eduaitutors.png"
-                alt="EduAiTutors - Path to Success"
-                width={320}
-                height={100}
-                className="h-24 w-auto brightness-0 invert"
+                alt="EduAiTutors"
+                width={280}
+                height={80}
+                className="h-16 w-auto brightness-0 invert"
               />
-            </div>
-            <p className="text-gray-400">
-              Empowering students with high-quality live interactive classes and structured learning paths.
+            </Link>
+            <p className="text-slate-400 font-medium leading-relaxed max-w-xs">
+              Empowering students with high-quality live interactive classes and AI-driven structured learning paths for guaranteed success.
             </p>
-            <div className="flex space-x-4 mt-4">
-              <a href="#" className="text-gray-400 hover:text-white transition">
-                <Facebook className="w-5 h-5" />
-              </a>
-              <a href="#" className="text-gray-400 hover:text-white transition">
-                <Twitter className="w-5 h-5" />
-              </a>
-              <a href="#" className="text-gray-400 hover:text-white transition">
-                <Instagram className="w-5 h-5" />
-              </a>
-              <a href="#" className="text-gray-400 hover:text-white transition">
-                <Youtube className="w-5 h-5" />
-              </a>
-            </div>
           </div>
 
-          {/* Quick Links */}
+          {/* Academic Pathways */}
           <div>
-            <h4 className="text-lg font-bold mb-4">Quick Links</h4>
-            <ul className="space-y-2">
-              <li>
-                <a href="#home" className="text-gray-400 hover:text-white transition">
-                  Home
-                </a>
-              </li>
-              <li>
-                <a href="#courses" className="text-gray-400 hover:text-white transition">
-                  Courses
-                </a>
-              </li>
-              <li>
-                <a href="#features" className="text-gray-400 hover:text-white transition">
-                  Features
-                </a>
-              </li>
-              <li>
-                <a href="#about" className="text-gray-400 hover:text-white transition">
-                  About
-                </a>
-              </li>
-              <li>
-                <Link href="/login" className="text-gray-400 hover:text-white transition">
-                  Register
-                </Link>
-              </li>
+            <h4 className="text-xs font-black uppercase tracking-[0.3em] text-primary-500 mb-8">Academic Pathways</h4>
+            <ul className="space-y-4">
+              {[
+                'Foundation Builder',
+                'Mastery Accelerator',
+                'Excellence Pro',
+                'Revision Before Boards',
+                'Revision Before Finals',
+                'Live Classes'
+              ].map((item) => (
+                <li key={item}>
+                  <Link href="/packages" className="text-slate-300 hover:text-white transition-all font-bold text-sm tracking-tight flex items-center group">
+                    <span className="w-0 h-0.5 bg-primary-600 mr-0 group-hover:w-3 group-hover:mr-2 transition-all duration-300" />
+                    {item}
+                  </Link>
+                </li>
+              ))}
             </ul>
           </div>
 
-          {/* Courses */}
+          {/* Competitive Entrance */}
           <div>
-            <h4 className="text-lg font-bold mb-4">Courses</h4>
-            <ul className="space-y-2">
-              <li>
-                <a href="#courses" className="text-gray-400 hover:text-white transition">
-                  Physics
-                </a>
-              </li>
-              <li>
-                <a href="#courses" className="text-gray-400 hover:text-white transition">
-                  Chemistry
-                </a>
-              </li>
-              <li>
-                <a href="#courses" className="text-gray-400 hover:text-white transition">
-                  Biology
-                </a>
-              </li>
-              <li>
-                <a href="#courses" className="text-gray-400 hover:text-white transition">
-                  Mathematics
-                </a>
-              </li>
+            <h4 className="text-xs font-black uppercase tracking-[0.3em] text-primary-500 mb-8">Competitive Entrance</h4>
+            <ul className="space-y-4">
+              {[
+                'JEE Mastery',
+                'NEET Prep'
+              ].map((item) => (
+                <li key={item}>
+                  <Link href="/packages" className="text-slate-300 hover:text-white transition-all font-bold text-sm tracking-tight flex items-center group">
+                    <span className="w-0 h-0.5 bg-primary-600 mr-0 group-hover:w-3 group-hover:mr-2 transition-all duration-300" />
+                    {item}
+                  </Link>
+                </li>
+              ))}
             </ul>
           </div>
 
-          {/* Contact Info */}
+          {/* Contact Support */}
           <div>
-            <h4 className="text-lg font-bold mb-4">Contact Info</h4>
-            <ul className="space-y-2 text-gray-400">
-              <li className="flex items-center">
-                <Phone className="w-4 h-4 mr-2" /> +91 98765 43210
+            <h4 className="text-xs font-black uppercase tracking-[0.3em] text-primary-500 mb-8">Contact Support</h4>
+            <ul className="space-y-6">
+              <li className="flex items-start gap-4">
+                <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-primary-500 shrink-0">
+                  <Phone className="w-5 h-5" />
+                </div>
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">Call Us</p>
+                  <p className="text-slate-200 font-bold tracking-tight">+91 98765 43210</p>
+                </div>
               </li>
-              <li className="flex items-center">
-                <Mail className="w-4 h-4 mr-2" />
-                <a href="mailto:info@edualtutors.com" className="hover:text-white transition">
-                  info@edualtutors.com
-                </a>
+              <li className="flex items-start gap-4">
+                <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-primary-500 shrink-0">
+                  <Mail className="w-5 h-5" />
+                </div>
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">Email Support</p>
+                  <a href="mailto:info@kiccpa.com" className="text-slate-200 font-bold tracking-tight hover:text-primary-500 transition-colors">
+                    info@kiccpa.com
+                  </a>
+                </div>
               </li>
-              <li className="flex items-center">
-                <MapPin className="w-4 h-4 mr-2" /> Bangalore, India
+              <li className="flex items-start gap-4">
+                <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-primary-500 shrink-0">
+                  <MapPin className="w-5 h-5" />
+                </div>
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">Our Location</p>
+                  <p className="text-slate-200 font-bold tracking-tight">Bangalore, India</p>
+                </div>
               </li>
             </ul>
           </div>
         </div>
 
-        <div className="border-t border-gray-800 pt-8 text-center text-gray-400">
-          <p>&copy; 2025-2026 Edu Altutors. All rights reserved. | Designed with ❤️ for Education</p>
+        {/* Bottom Bar */}
+        <div className="pt-12 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-6">
+          <p className="text-slate-500 font-medium text-xs tracking-wide">
+            &copy; {new Date().getFullYear()} EduAiTutors. All rights reserved.
+          </p>
+          <div className="flex items-center gap-8">
+            <Link href="/privacy" className="text-slate-500 hover:text-white transition-colors text-[10px] font-black uppercase tracking-widest">Privacy Policy</Link>
+            <Link href="/terms" className="text-slate-500 hover:text-white transition-colors text-[10px] font-black uppercase tracking-widest">Terms of Service</Link>
+          </div>
         </div>
       </div>
     </footer>

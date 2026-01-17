@@ -4,12 +4,59 @@ import { Suspense, useEffect, useState } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import Header from '@/components/Header'
 import Sidebar from '@/components/Sidebar'
+import { useSession } from 'next-auth/react'
 import { BookOpen, Download, FileText, Save, X, ChevronLeft, Play, Pause, Volume2, Maximize, CheckCircle2 } from 'lucide-react'
+
+const videoContent: Record<string, any> = {
+    'Physics': {
+        title: 'Introduction to Mechanics',
+        description: 'Learn the fundamental concepts of motion, force, and energy in this comprehensive introduction.',
+        duration: '45 mins',
+        instructor: 'Dr. Sarah Johnson',
+        chapters: [
+            { time: '0:00', title: 'Introduction to Motion' },
+            { time: '8:30', title: 'Newton\'s First Law' },
+            { time: '18:45', title: 'Force and Acceleration' },
+            { time: '32:10', title: 'Energy Conservation' }
+        ],
+        resources: [
+            { name: 'Lecture Notes - Mechanics.pdf', size: '2.4 MB', type: 'PDF' },
+            { name: 'Practice Problems.pdf', size: '1.8 MB', type: 'PDF' },
+            { name: 'Formula Sheet.pdf', size: '856 KB', type: 'PDF' }
+        ],
+        learningObjectives: [
+            'Understand the fundamental concepts of motion and displacement',
+            'Apply Newton\'s laws to solve real-world problems',
+            'Calculate work, energy, and power in various scenarios',
+            'Analyze conservation of energy in mechanical systems'
+        ],
+        questions: [
+            {
+                type: 'mcq',
+                question: 'Which of Newton\'s laws states that "For every action, there is an equal and opposite reaction"?',
+                options: ['First Law', 'Second Law', 'Third Law', 'Law of Gravitation'],
+                answer: 'Third Law'
+            },
+            {
+                type: 'fill',
+                question: 'Energy cannot be created or destroyed, it can only be __________.',
+                answer: 'transformed'
+            },
+            {
+                type: 'mcq',
+                question: 'What is the SI unit of Force?',
+                options: ['Joule', 'Newton', 'Watt', 'Pascal'],
+                answer: 'Newton'
+            }
+        ]
+    }
+}
 
 function VideoPlayerContent() {
     const searchParams = useSearchParams()
     const router = useRouter()
-    const [user, setUser] = useState<any>(null)
+    const { data: session, status } = useSession()
+    const user = session?.user as any
     const [activeTab, setActiveTab] = useState('overview')
     const [notes, setNotes] = useState('')
     const [savedNotes, setSavedNotes] = useState<string[]>([])
@@ -17,195 +64,122 @@ function VideoPlayerContent() {
     const [assessmentProgress, setAssessmentProgress] = useState<Record<string, any>>({})
     const [assessmentSubmitted, setAssessmentSubmitted] = useState(false)
     const [isVideoFinished, setIsVideoFinished] = useState(false)
+    const [course, setCourse] = useState<any>(null)
+    const [isLoading, setIsLoading] = useState(true)
+    const [elapsedSeconds, setElapsedSeconds] = useState(0)
+    const [totalSeconds, setTotalSeconds] = useState(2700) // Default 45 mins
+    const [lastSyncProgress, setLastSyncProgress] = useState(0)
 
     const subject = searchParams.get('subject') || ''
     const videoId = searchParams.get('id') || ''
 
     useEffect(() => {
-        const storedUser = localStorage.getItem('currentUser')
-        if (storedUser) {
-            setUser(JSON.parse(storedUser))
+        if (status === 'unauthenticated') {
+            router.push('/login')
+        }
+    }, [status, router])
+
+    useEffect(() => {
+        const fetchCourse = async () => {
+            if (videoId && videoId.length > 20) {
+                try {
+                    const res = await fetch(`/api/courses/${videoId}`)
+                    if (res.ok) {
+                        const data = await res.json()
+                        setCourse(data)
+                        // If duration is like "45 mins", parse to seconds
+                        if (data.duration) {
+                            const mins = parseInt(data.duration)
+                            if (!isNaN(mins)) setTotalSeconds(mins * 60)
+                        }
+                    }
+
+                    // Fetch existing progress
+                    const progRes = await fetch(`/api/lessons/progress?courseId=${videoId}`)
+                    if (progRes.ok) {
+                        const progs = await progRes.json()
+                        const myProg = progs.find((p: any) => p.chapterIndex === 0) // Simplified for first chapter
+                        if (myProg) {
+                            setElapsedSeconds(myProg.watchTime || 0)
+                            if (myProg.isCompleted) setIsVideoFinished(true)
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error fetching course:', error)
+                } finally {
+                    setIsLoading(false)
+                }
+            } else {
+                setIsLoading(false)
+            }
         }
 
-        // Load saved notes from localStorage
-        const saved = localStorage.getItem(`notes_${subject}_${videoId}`)
-        if (saved) {
-            setSavedNotes(JSON.parse(saved))
+        if (status === 'authenticated') {
+            fetchCourse()
         }
-    }, [subject, videoId])
+    }, [status, videoId])
 
-    const videoContent: Record<string, any> = {
-        'Physics': {
-            title: 'Introduction to Mechanics',
-            description: 'Learn the fundamental concepts of motion, force, and energy in this comprehensive introduction.',
-            duration: '45 mins',
-            instructor: 'Dr. Sarah Johnson',
-            chapters: [
-                { time: '0:00', title: 'Introduction to Motion' },
-                { time: '8:30', title: 'Newton\'s First Law' },
-                { time: '18:45', title: 'Force and Acceleration' },
-                { time: '32:10', title: 'Energy Conservation' }
-            ],
-            resources: [
-                { name: 'Lecture Notes - Mechanics.pdf', size: '2.4 MB', type: 'PDF' },
-                { name: 'Practice Problems.pdf', size: '1.8 MB', type: 'PDF' },
-                { name: 'Formula Sheet.pdf', size: '856 KB', type: 'PDF' }
-            ],
-            learningObjectives: [
-                'Understand the fundamental concepts of motion and displacement',
-                'Apply Newton\'s laws to solve real-world problems',
-                'Calculate work, energy, and power in various scenarios',
-                'Analyze conservation of energy in mechanical systems'
-            ],
-            questions: [
-                {
-                    type: 'mcq',
-                    question: 'Which of Newton\'s laws states that "For every action, there is an equal and opposite reaction"?',
-                    options: ['First Law', 'Second Law', 'Third Law', 'Law of Gravitation'],
-                    answer: 'Third Law'
-                },
-                {
-                    type: 'fill',
-                    question: 'Energy cannot be created or destroyed, it can only be __________.',
-                    answer: 'transformed'
-                },
-                {
-                    type: 'mcq',
-                    question: 'What is the SI unit of Force?',
-                    options: ['Joule', 'Newton', 'Watt', 'Pascal'],
-                    answer: 'Newton'
-                }
-            ]
-        },
-        'Chemistry': {
-            title: 'Atomic Structure Basics',
-            description: 'Understand the building blocks of matter and explore atomic models in this essential chemistry lesson.',
-            duration: '38 mins',
-            instructor: 'Prof. Michael Chen',
-            chapters: [
-                { time: '0:00', title: 'Historical Development of Atomic Theory' },
-                { time: '10:20', title: 'Subatomic Particles' },
-                { time: '22:15', title: 'Electron Configuration' },
-                { time: '30:00', title: 'Quantum Numbers' }
-            ],
-            resources: [
-                { name: 'Atomic Structure Guide.pdf', size: '3.1 MB', type: 'PDF' },
-                { name: 'Periodic Table Reference.pdf', size: '1.2 MB', type: 'PDF' },
-                { name: 'Practice Questions.pdf', size: '2.0 MB', type: 'PDF' }
-            ],
-            learningObjectives: [
-                'Trace the historical development of atomic models',
-                'Identify and describe subatomic particles',
-                'Write electron configurations for elements',
-                'Understand quantum numbers and their significance'
-            ],
-            questions: [
-                {
-                    type: 'mcq',
-                    question: 'Which subatomic particle has a negative charge?',
-                    options: ['Proton', 'Neutron', 'Electron', 'Nucleus'],
-                    answer: 'Electron'
-                },
-                {
-                    type: 'fill',
-                    question: 'The center of an atom is called the __________.',
-                    answer: 'nucleus'
-                },
-                {
-                    type: 'mcq',
-                    question: 'Atoms of same element with different number of neutrons are called __________.',
-                    options: ['Isomers', 'Isotopes', 'Allotropes', 'Ions'],
-                    answer: 'Isotopes'
-                }
-            ]
-        },
-        'Biology': {
-            title: 'Cell Biology Fundamentals',
-            description: 'Dive into the world of cells and discover how living organisms function at the microscopic level.',
-            duration: '52 mins',
-            instructor: 'Dr. Emily Rodriguez',
-            chapters: [
-                { time: '0:00', title: 'Introduction to Cells' },
-                { time: '12:00', title: 'Cell Membrane Structure' },
-                { time: '26:30', title: 'Organelles and Their Functions' },
-                { time: '40:15', title: 'Cell Division Process' }
-            ],
-            resources: [
-                { name: 'Cell Biology Complete Guide.pdf', size: '4.5 MB', type: 'PDF' },
-                { name: 'Organelle Diagram.pdf', size: '1.5 MB', type: 'PDF' },
-                { name: 'Lab Manual - Cell Study.pdf', size: '2.8 MB', type: 'PDF' }
-            ],
-            learningObjectives: [
-                'Distinguish between prokaryotic and eukaryotic cells',
-                'Explain the structure and function of cell membranes',
-                'Identify major organelles and their roles',
-                'Understand the process of mitosis and meiosis'
-            ],
-            questions: [
-                {
-                    type: 'mcq',
-                    question: 'Which organelle is known as the "powerhouse of the cell"?',
-                    options: ['Nucleus', 'Golgi Apparatus', 'Mitochondria', 'Ribosome'],
-                    answer: 'Mitochondria'
-                },
-                {
-                    type: 'fill',
-                    question: 'The _________ is the basic structural and functional unit of all living organisms.',
-                    answer: 'cell'
-                },
-                {
-                    type: 'mcq',
-                    question: 'Which process results in two identical daughter cells?',
-                    options: ['Meiosis', 'Mitosis', 'Photosynthesis', 'Diffusion'],
-                    answer: 'Mitosis'
-                }
-            ]
-        },
-        'Mathematics': {
-            title: 'Algebra Essentials',
-            description: 'Master the core algebraic concepts that form the foundation of advanced mathematics.',
-            duration: '42 mins',
-            instructor: 'Prof. Robert Williams',
-            chapters: [
-                { time: '0:00', title: 'Variables and Expressions' },
-                { time: '11:45', title: 'Solving Linear Equations' },
-                { time: '24:20', title: 'Quadratic Equations' },
-                { time: '35:00', title: 'Factoring Techniques' }
-            ],
-            resources: [
-                { name: 'Algebra Formula Reference.pdf', size: '1.9 MB', type: 'PDF' },
-                { name: 'Practice Worksheets.pdf', size: '2.3 MB', type: 'PDF' },
-                { name: 'Solution Manual.pdf', size: '3.2 MB', type: 'PDF' }
-            ],
-            learningObjectives: [
-                'Simplify algebraic expressions with confidence',
-                'Solve linear and quadratic equations',
-                'Apply factoring techniques to complex problems',
-                'Use algebraic methods in real-world applications'
-            ],
-            questions: [
-                {
-                    type: 'mcq',
-                    question: 'What is the solution for 2x + 5 = 13?',
-                    options: ['3', '4', '5', '6'],
-                    answer: '4'
-                },
-                {
-                    type: 'fill',
-                    question: 'In the expression ax² + bx + c = 0, if the highest power is 2, it is a ___________ equation.',
-                    answer: 'quadratic'
-                },
-                {
-                    type: 'mcq',
-                    question: 'What is the expanded form of (a+b)²?',
-                    options: ['a² + b²', 'a² - b²', 'a² + 2ab + b²', '2a + 2b'],
-                    answer: 'a² + 2ab + b²'
-                }
-            ]
+    useEffect(() => {
+        let interval: NodeJS.Timeout;
+        if (isPlaying && !isVideoFinished) {
+            interval = setInterval(() => {
+                setElapsedSeconds(prev => {
+                    const next = prev + 1;
+                    if (next >= totalSeconds) {
+                        setIsPlaying(false)
+                        setIsVideoFinished(true)
+                        syncProgress(next, true)
+                        return totalSeconds
+                    }
+                    return next
+                });
+            }, 1000);
         }
+        return () => clearInterval(interval);
+    }, [isPlaying, isVideoFinished, totalSeconds]);
+
+    // Sync progress every 10 seconds
+    useEffect(() => {
+        if (elapsedSeconds > 0 && Math.abs(elapsedSeconds - lastSyncProgress) >= 10) {
+            syncProgress(elapsedSeconds, false)
+            setLastSyncProgress(elapsedSeconds)
+        }
+    }, [elapsedSeconds]);
+
+    const syncProgress = async (seconds: number, completed: boolean) => {
+        if (!videoId || videoId.length < 20) return;
+        try {
+            await fetch('/api/lessons/progress', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    courseId: videoId,
+                    chapterIndex: 0, // Placeholder
+                    watchTime: seconds,
+                    progress: Math.round((seconds / totalSeconds) * 100),
+                    isCompleted: completed,
+                    title: currentVideo.title,
+                    subject: subject
+                })
+            })
+        } catch (e) { console.error("Sync error:", e) }
     }
 
-    const currentVideo = videoContent[subject] || videoContent['Physics']
+    const formatTime = (secs: number) => {
+        const mins = Math.floor(secs / 60)
+        const s = secs % 60
+        return `${mins}:${s < 10 ? '0' : ''}${s}`
+    }
+
+    const currentVideo = course || videoContent[subject] || videoContent['Physics']
+
+    if (isLoading || (status === 'loading')) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-gray-50">
+                <div className="w-12 h-12 border-4 border-primary-600 border-t-transparent rounded-full animate-spin" />
+            </div>
+        )
+    }
 
     const handleSaveNote = () => {
         if (notes.trim()) {
@@ -269,20 +243,24 @@ function VideoPlayerContent() {
                                 {/* Video Controls */}
                                 <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-6">
                                     <div className="w-full bg-gray-600 h-1 rounded-full mb-4">
-                                        <div className="bg-primary-600 h-full rounded-full w-[30%]"></div>
+                                        <div
+                                            className="bg-primary-600 h-full rounded-full transition-all duration-1000"
+                                            style={{ width: `${(elapsedSeconds / totalSeconds) * 100}%` }}
+                                        ></div>
                                     </div>
                                     <div className="flex items-center justify-between text-white">
                                         <div className="flex items-center gap-4">
                                             <button className="hover:text-primary-400 transition" onClick={() => setIsPlaying(!isPlaying)}>
                                                 {isPlaying ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5" />}
                                             </button>
-                                            <span className="text-sm">12:34 / {currentVideo.duration}</span>
+                                            <span className="text-sm">{formatTime(elapsedSeconds)} / {formatTime(totalSeconds)}</span>
                                         </div>
                                         <div className="flex items-center gap-4">
                                             <button
                                                 onClick={() => {
                                                     setIsPlaying(false)
                                                     setIsVideoFinished(true)
+                                                    syncProgress(totalSeconds, true)
                                                 }}
                                                 className="px-4 py-1.5 bg-white/10 hover:bg-white/20 rounded-lg text-xs font-bold transition flex items-center gap-2 border border-white/20"
                                             >

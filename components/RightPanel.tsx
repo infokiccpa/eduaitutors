@@ -3,7 +3,7 @@
 import { Bell, Calendar as CalendarIcon, Clock, ChevronRight, Award, Flame, Star, MessageSquare } from 'lucide-react'
 import { useState } from 'react'
 
-export default function RightPanel() {
+export default function RightPanel({ onChatOpen }: { onChatOpen?: () => void }) {
     const [activeTab, setActiveTab] = useState('events')
     const currentDate = new Date()
     const daysInMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate()
@@ -106,8 +106,8 @@ export default function RightPanel() {
                                     {upcomingEvents.map((event) => (
                                         <div key={event.id} className="flex items-center gap-4 group cursor-pointer">
                                             <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 transition-colors ${event.type === 'exam' ? 'bg-red-50 text-red-600 group-hover:bg-red-600 group-hover:text-white' :
-                                                    event.type === 'class' ? 'bg-blue-50 text-blue-600 group-hover:bg-blue-600 group-hover:text-white' :
-                                                        'bg-purple-50 text-purple-600 group-hover:bg-purple-600 group-hover:text-white'
+                                                event.type === 'class' ? 'bg-blue-50 text-blue-600 group-hover:bg-blue-600 group-hover:text-white' :
+                                                    'bg-purple-50 text-purple-600 group-hover:bg-purple-600 group-hover:text-white'
                                                 }`}>
                                                 {event.type === 'exam' ? <Star className="w-4 h-4" /> : <CalendarIcon className="w-4 h-4" />}
                                             </div>
@@ -156,7 +156,10 @@ export default function RightPanel() {
                 <div className="absolute -right-4 -bottom-4 w-24 h-24 bg-white/10 rounded-full blur-2xl group-hover:scale-150 transition-transform duration-700" />
                 <p className="text-xs font-bold uppercase tracking-widest opacity-80 mb-1">Need Help?</p>
                 <h4 className="text-xl font-black mb-4">Chat with your AI Tutor</h4>
-                <button className="w-full py-3 bg-white text-indigo-600 rounded-2xl text-xs font-black hover:bg-gray-100 transition shadow-xl flex items-center justify-center gap-2">
+                <button
+                    onClick={onChatOpen}
+                    className="w-full py-3 bg-white text-indigo-600 rounded-2xl text-xs font-black hover:bg-gray-100 transition shadow-xl flex items-center justify-center gap-2"
+                >
                     <MessageSquare className="w-4 h-4" />
                     Start Conversation
                 </button>

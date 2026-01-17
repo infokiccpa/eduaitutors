@@ -5,16 +5,20 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { ChevronDown, X, ArrowRight, Video, GraduationCap, BookOpen, HelpCircle, Trophy, Target, Smile, Star, LogOut, User, MoreVertical, LayoutDashboard } from 'lucide-react'
 import { AnimatePresence, motion, useScroll, useSpring } from 'framer-motion'
-import { useRouter } from 'next/navigation'
+import { useRouter, usePathname } from 'next/navigation'
 import PackagesSection from '@/components/PackagesSection'
+import PublicFooter from '@/components/PublicFooter'
 import { toast } from 'react-toastify'
+import { useSession, signOut } from 'next-auth/react'
 
 export default function PublicHeader() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [fullScreenDropdown, setFullScreenDropdown] = useState<string | null>(null)
-  const [user, setUser] = useState<{ fullName?: string; name?: string; email: string } | null>(null)
+  const { data: session } = useSession()
+  const user = session?.user
   const [isProfileOpen, setIsProfileOpen] = useState(false)
   const router = useRouter()
+  const pathname = usePathname()
 
   const { scrollYProgress } = useScroll()
   const scaleX = useSpring(scrollYProgress, {
@@ -23,16 +27,20 @@ export default function PublicHeader() {
     restDelta: 0.001
   })
 
+  const [isScrolled, setIsScrolled] = useState(false)
+
   useEffect(() => {
-    const storedUser = localStorage.getItem('currentUser')
-    if (storedUser) {
-      setUser(JSON.parse(storedUser))
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 20)
     }
+    window.addEventListener('scroll', handleScroll)
+    return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
-  const handleLogout = () => {
-    localStorage.removeItem('currentUser')
-    setUser(null)
+  // User is handled by next-auth now
+
+  const handleLogout = async () => {
+    await signOut({ redirect: false })
     toast.success('Logged out successfully')
     router.push('/')
   }
@@ -40,14 +48,14 @@ export default function PublicHeader() {
   const studyMenuItems = [
     {
       title: 'Subject Areas',
-      href: '#courses',
+      href: '/courses',
       image: 'https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=800',
       description: 'Subject areas',
       subItems: ['Mathematics', 'Physics', 'Chemistry', 'Biology', 'English']
     },
     {
       title: 'Boards',
-      href: '#courses',
+      href: '/courses',
       image: 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=800',
       description: 'Education Boards',
       subItems: ['CBSE', 'ICSE']
@@ -76,152 +84,125 @@ export default function PublicHeader() {
 
   return (
     <>
-      <header className="bg-primary-50 shadow-sm sticky top-0 z-50">
+      <header
+        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ease-in-out px-4 py-4 md:px-8 ${isScrolled ? 'md:py-4' : 'md:py-6'
+          }`}
+      >
         <motion.div
           className="absolute top-0 left-0 right-0 h-1 bg-primary-600 origin-left z-[60]"
           style={{ scaleX }}
         />
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-28">
-            <Link href="/" className="flex items-center space-x-3">
+
+        <div
+          className={`max-w-[1440px] mx-auto transition-all duration-500 border border-transparent bg-white/80 backdrop-blur-xl shadow-[0_8px_32px_rgba(0,0,0,0.08)] rounded-[2rem] border-white/40 px-6`}
+        >
+          <div className={`flex justify-between items-center transition-all duration-500 ${isScrolled ? 'h-20' : 'h-24 md:h-32'
+            }`}>
+            <Link href="/" className="flex items-center space-x-3 group outline-none">
               <Image
                 src="/logo-eduaitutors.png"
-                alt="EduAiTutors - Path to Success"
+                alt="EduAiTutors"
                 width={320}
-                height={100}
+                height={96}
                 priority
-                className="h-20 w-auto sm:h-24"
+                className={`w-auto transition-all duration-500 group-hover:scale-105 ${isScrolled ? 'h-14 md:h-16' : 'h-24 md:h-28'
+                  }`}
               />
             </Link>
 
-            <nav className="hidden lg:flex items-center space-x-8">
-              <Link
-                href="/"
-                className="text-gray-700 hover:text-primary-600 font-medium transition-all duration-300 relative group"
-                onClick={handleDropdownClose}
-              >
-                Home
-                <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-primary-600 transition-all duration-300 group-hover:w-full"></span>
-              </Link>
+            <nav className="hidden lg:flex items-center space-x-1">
+              {[
+                { name: 'Home', href: '/' },
+                { name: 'Courses', href: '/courses' },
+                { name: 'Features', href: '/features' },
+                { name: 'About', href: '/#about' },
+                { name: 'Packages', href: '/packages' }
+              ].map((item) => {
+                const isActive = item.href === '/' ? pathname === '/' : pathname.startsWith(item.href);
 
-              <div
-                className="relative dropdown-container"
-              >
-                <button
-                  className="flex items-center text-gray-700 hover:text-primary-600 font-medium transition-all duration-300 relative group"
-                  onClick={() => handleDropdownToggle('study')}
-                >
-                  Study
-                  <ChevronDown className={`ml-1 w-4 h-4 transition-transform duration-300 ${fullScreenDropdown === 'study' ? 'rotate-180' : ''}`} />
-                  <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-primary-600 transition-all duration-300 group-hover:w-full"></span>
-                </button>
-              </div>
+                return (
+                  <div key={item.name} className="relative group/nav">
+                    <Link
+                      href={item.href}
+                      onClick={handleDropdownClose}
+                      className={`px-5 py-3 rounded-full text-sm font-black uppercase tracking-widest transition-all duration-300 ${isActive
+                        ? 'text-primary-600 bg-primary-50/50 shadow-[0_4px_12px_rgba(0,0,0,0.03)]'
+                        : 'text-gray-900 hover:text-primary-600'
+                        }`}
+                    >
+                      {item.name}
+                    </Link>
+                  </div>
+                )
+              })}
 
-              <div
-                className="relative dropdown-container"
-              >
-                <button
-                  className="flex items-center text-gray-700 hover:text-primary-600 font-medium transition-all duration-300 relative group"
-                  onClick={() => handleDropdownToggle('features')}
-                >
-                  Features
-                  <ChevronDown className={`ml-1 w-4 h-4 transition-transform duration-300 ${fullScreenDropdown === 'features' ? 'rotate-180' : ''}`} />
-                  <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-primary-600 transition-all duration-300 group-hover:w-full"></span>
-                </button>
-              </div>
-              <div
-                className="relative dropdown-container"
-              >
-                <button
-                  className="flex items-center text-gray-700 hover:text-primary-600 font-medium transition-all duration-300 relative group"
-                  onClick={() => handleDropdownToggle('about')}
-                >
-                  About
-                  <ChevronDown className={`ml-1 w-4 h-4 transition-transform duration-300 ${fullScreenDropdown === 'about' ? 'rotate-180' : ''}`} />
-                  <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-primary-600 transition-all duration-300 group-hover:w-full"></span>
-                </button>
-              </div>
-              <div className="relative dropdown-container">
-                <button
-                  className="flex items-center text-gray-700 hover:text-primary-600 font-medium transition-all duration-300 relative group"
-                  onClick={() => handleDropdownToggle('packages')}
-                >
-                  Packages
-                  <ChevronDown className={`ml-1 w-4 h-4 transition-transform duration-300 ${fullScreenDropdown === 'packages' ? 'rotate-180' : ''}`} />
-                  <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-primary-600 transition-all duration-300 group-hover:w-full"></span>
-                </button>
-              </div>
+              <div className="h-4 w-[1px] bg-gray-200 mx-4" />
 
               {user ? (
-                <div className="relative ml-4">
+                <div className="relative">
                   <button
                     onClick={() => setIsProfileOpen(!isProfileOpen)}
-                    className="flex items-center space-x-2 bg-transparent rounded-full hover:bg-primary-100 transition-all duration-300 p-1"
+                    className="flex items-center space-x-3 bg-gray-50/50 backdrop-blur-md border border-gray-100/50 rounded-full px-2 py-2 hover:bg-white hover:shadow-lg transition-all duration-300"
                   >
-                    <div className="w-10 h-10 rounded-full bg-primary-600 flex items-center justify-center text-white font-bold shadow-lg ring-2 ring-white">
-                      {(user.fullName || user.name || 'U').charAt(0).toUpperCase()}
+                    <div className="w-10 h-10 rounded-full bg-primary-600 flex items-center justify-center text-white text-xs font-black shadow-lg shadow-primary-600/20">
+                      {(user.name || 'U').charAt(0).toUpperCase()}
                     </div>
-                    <div className="pr-1 text-gray-500">
-                      <MoreVertical className="w-5 h-5 transition-transform group-hover:scale-110" />
-                    </div>
+                    <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform duration-500 ${isProfileOpen ? 'rotate-180' : ''}`} />
                   </button>
 
                   <AnimatePresence>
                     {isProfileOpen && (
                       <>
-                        <div
-                          className="fixed inset-0 z-10"
-                          onClick={() => setIsProfileOpen(false)}
-                        />
+                        <div className="fixed inset-0 z-10" onClick={() => setIsProfileOpen(false)} />
                         <motion.div
-                          initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                          animate={{ opacity: 1, y: 0, scale: 1 }}
-                          exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                          className="absolute right-0 mt-3 w-56 bg-white rounded-2xl shadow-2xl border border-gray-100 py-2 z-20 origin-top-right"
+                          initial={{ opacity: 0, scale: 0.9, y: 10 }}
+                          animate={{ opacity: 1, scale: 1, y: 0 }}
+                          exit={{ opacity: 0, scale: 0.9, y: 10 }}
+                          className="absolute right-0 mt-4 w-72 bg-white rounded-[2rem] shadow-3xl border border-gray-100 overflow-hidden z-20 p-2"
                         >
-                          <div className="px-4 py-3 border-b border-gray-50 mb-1">
-                            <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Signed in as</p>
-                            <p className="text-sm font-black text-gray-900 truncate">{user.fullName || user.name || 'User'}</p>
+                          <div className="px-6 py-6 bg-gray-50/50 rounded-[1.5rem] mb-2">
+                            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-primary-600 block mb-2">Member Account</span>
+                            <h4 className="text-lg font-black text-gray-900 leading-none">{user.name || 'User'}</h4>
+                            <p className="text-xs text-gray-500 mt-2 truncate font-medium">{user.email}</p>
                           </div>
 
-                          <Link
-                            href="/dashboard"
-                            className="flex items-center space-x-3 px-4 py-3 text-sm font-bold text-gray-700 hover:bg-primary-50 hover:text-primary-600 transition-colors"
-                            onClick={() => setIsProfileOpen(false)}
-                          >
-                            <LayoutDashboard className="w-4 h-4" />
-                            <span>My Dashboard</span>
-                          </Link>
+                          <div className="space-y-1">
+                            <Link
+                              href="/dashboard"
+                              className="flex items-center space-x-3 px-6 py-4 text-sm font-black text-gray-700 hover:bg-primary-50 hover:text-primary-600 transition-all rounded-xl"
+                              onClick={() => setIsProfileOpen(false)}
+                            >
+                              <LayoutDashboard className="w-5 h-5 flex-shrink-0" />
+                              <span>Dashboard Overview</span>
+                            </Link>
 
-                          <button
-                            onClick={() => {
-                              setIsProfileOpen(false)
-                              handleLogout()
-                            }}
-                            className="w-full flex items-center space-x-3 px-4 py-3 text-sm font-bold text-red-500 hover:bg-red-50 transition-colors text-left"
-                          >
-                            <LogOut className="w-4 h-4" />
-                            <span>Logout</span>
-                          </button>
+                            <button
+                              onClick={() => {
+                                setIsProfileOpen(false)
+                                handleLogout()
+                              }}
+                              className="w-full flex items-center space-x-3 px-6 py-4 text-sm font-black text-red-500 hover:bg-red-50 transition-all rounded-xl text-left"
+                            >
+                              <LogOut className="w-5 h-5 flex-shrink-0" />
+                              <span>Sign Out Profile</span>
+                            </button>
+                          </div>
                         </motion.div>
                       </>
                     )}
                   </AnimatePresence>
                 </div>
               ) : (
-                <div className="flex items-center space-x-4 ml-4">
+                <div className="flex items-center space-x-3">
                   <Link
                     href="/login?mode=signup"
-                    className="text-gray-700 hover:text-primary-600 font-medium transition-all duration-300 relative group"
-                    onClick={handleDropdownClose}
+                    className="px-6 py-3 rounded-full text-sm font-black uppercase tracking-widest text-gray-900 hover:bg-gray-100 transition-all"
                   >
                     Register
-                    <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-primary-600 transition-all duration-300 group-hover:w-full"></span>
                   </Link>
                   <Link
                     href="/login"
-                    className="bg-primary-600 text-white px-6 py-2 rounded-lg hover:bg-primary-700 font-semibold transition"
-                    onClick={handleDropdownClose}
+                    className="bg-primary-600 text-white px-8 py-3 rounded-full text-sm font-black uppercase tracking-widest hover:bg-primary-700 transition shadow-lg shadow-primary-600/30 active:scale-95"
                   >
                     Login
                   </Link>
@@ -232,9 +213,14 @@ export default function PublicHeader() {
             <div className="lg:hidden">
               <button
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="text-gray-700 focus:outline-none"
+                className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all ${isScrolled ? 'bg-primary-50 text-primary-600' : 'bg-white text-gray-900'
+                  } shadow-sm border border-gray-100`}
               >
-                <span className="text-2xl">☰</span>
+                <div className="w-6 flex flex-col items-end gap-1.5">
+                  <span className="w-full h-0.5 bg-current rounded-full" />
+                  <span className="w-2/3 h-0.5 bg-current rounded-full" />
+                  <span className="w-full h-0.5 bg-current rounded-full" />
+                </div>
               </button>
             </div>
           </div>
@@ -248,6 +234,13 @@ export default function PublicHeader() {
           style={{ top: '80px' }}
         >
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 animate-dropdown-enter">
+            <button
+              onClick={handleDropdownClose}
+              className="flex items-center gap-2 text-primary-600 font-black uppercase tracking-widest mb-12 hover:gap-4 transition-all group"
+            >
+              <ChevronDown className="w-5 h-5 rotate-90" />
+              <span>Back to Main</span>
+            </button>
             <div className="mb-8">
               <h2 className="text-3xl font-bold text-gray-900">Study with Us</h2>
             </div>
@@ -317,7 +310,7 @@ export default function PublicHeader() {
                   <h3 className="text-xl font-bold text-gray-900 mb-4">Quick Links</h3>
                   <div className="grid grid-cols-2 gap-4">
                     <Link
-                      href="#courses"
+                      href="/courses"
                       onClick={handleDropdownClose}
                       className="text-gray-600 hover:text-primary-600 transition py-2"
                     >
@@ -366,271 +359,271 @@ export default function PublicHeader() {
         </div>
       )}
 
-      {/* Packages Dropdown (compact teaser) */}
-      {fullScreenDropdown === 'packages' && (
-        <div
-          className="fixed inset-0 bg-gray-50 z-50 overflow-y-auto dropdown-content"
-          style={{ top: '80px' }}
-        >
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 animate-dropdown-enter">
-            <div className="mb-6 text-center">
-              <h2 className="text-2xl font-bold text-gray-900">Packages</h2>
-              <p className="text-gray-600 mt-1">Quick preview — open the full packages page for details</p>
-            </div>
 
-            <PackagesSection variant="compact" onLinkClick={handleDropdownClose} />
-
-            <div className="mt-6 text-center">
-              <Link href="/packages" onClick={handleDropdownClose} className="inline-flex items-center bg-primary-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-primary-700 transition">
-                View All Packages
-                <ArrowRight className="ml-2 w-5 h-5" />
-              </Link>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* About Dropdown */}
-      {fullScreenDropdown === 'about' && (
-        <div
-          className="fixed inset-0 bg-gray-50 z-50 overflow-y-auto dropdown-content"
-          style={{ top: '80px' }}
-        >
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 animate-dropdown-enter">
-            <div className="mb-16 text-center">
-              <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
-                About EduAiTutors
-              </h2>
-              <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-                EduAiTutors is dedicated to delivering high-quality LIVE interactive classes,
-                helping students build strong concepts, improve scores, and learn with confidence.
-              </p>
-            </div>
-
-            {/* About Cards Grid */}
-            <div className="grid md:grid-cols-3 gap-8">
-              <div className="text-center p-8 bg-gradient-to-br from-purple-50 to-pink-50 rounded-2xl hover:shadow-lg transition">
-                <div className="bg-gradient-to-br from-purple-500 to-pink-500 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6">
-                  <Target className="w-10 h-10 text-white" />
-                </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-3">Our Mission</h3>
-                <p className="text-gray-600">
-                  To make quality education accessible to every student through structured,
-                  engaging and exam-focused online learning.
+      {
+        fullScreenDropdown === 'about' && (
+          <div
+            className="fixed inset-0 bg-gray-50 z-50 overflow-y-auto dropdown-content"
+            style={{ top: '80px' }}
+          >
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 animate-dropdown-enter">
+              <button
+                onClick={handleDropdownClose}
+                className="flex items-center gap-2 text-primary-600 font-black uppercase tracking-widest mb-12 hover:gap-4 transition-all group"
+              >
+                <ChevronDown className="w-5 h-5 rotate-90" />
+                <span>Back to Main</span>
+              </button>
+              <div className="mb-16 text-center">
+                <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
+                  About EduAiTutors
+                </h2>
+                <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+                  EduAiTutors is dedicated to delivering high-quality LIVE interactive classes,
+                  helping students build strong concepts, improve scores, and learn with confidence.
                 </p>
               </div>
 
-              <div className="text-center p-8 bg-gradient-to-br from-blue-50 to-cyan-50 rounded-2xl hover:shadow-lg transition">
-                <div className="bg-gradient-to-br from-blue-500 to-cyan-500 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6">
-                  <GraduationCap className="w-10 h-10 text-white" />
+              {/* About Cards Grid */}
+              <div className="grid md:grid-cols-3 gap-8">
+                <div className="text-center p-8 bg-gradient-to-br from-purple-50 to-pink-50 rounded-2xl hover:shadow-lg transition">
+                  <div className="bg-gradient-to-br from-purple-500 to-pink-500 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <Target className="w-10 h-10 text-white" />
+                  </div>
+                  <h3 className="text-xl font-bold text-gray-900 mb-3">Our Mission</h3>
+                  <p className="text-gray-600">
+                    To make quality education accessible to every student through structured,
+                    engaging and exam-focused online learning.
+                  </p>
                 </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-3">Expert Faculty</h3>
-                <p className="text-gray-600">
-                  Learn from experienced, passionate teachers who simplify complex topics and
-                  keep sessions interactive.
-                </p>
-              </div>
 
-              <div className="text-center p-8 bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl hover:shadow-lg transition">
-                <div className="bg-gradient-to-br from-green-500 to-emerald-500 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6">
-                  <Smile className="w-10 h-10 text-white" />
+                <div className="text-center p-8 bg-gradient-to-br from-blue-50 to-cyan-50 rounded-2xl hover:shadow-lg transition">
+                  <div className="bg-gradient-to-br from-blue-500 to-cyan-500 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <GraduationCap className="w-10 h-10 text-white" />
+                  </div>
+                  <h3 className="text-xl font-bold text-gray-900 mb-3">Expert Faculty</h3>
+                  <p className="text-gray-600">
+                    Learn from experienced, passionate teachers who simplify complex topics and
+                    keep sessions interactive.
+                  </p>
                 </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-3">Student Success</h3>
-                <p className="text-gray-600">
-                  With regular tests, doubt clearing, and personalized feedback, we ensure
-                  students stay on track and achieve results.
-                </p>
+
+                <div className="text-center p-8 bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl hover:shadow-lg transition">
+                  <div className="bg-gradient-to-br from-green-500 to-emerald-500 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <Smile className="w-10 h-10 text-white" />
+                  </div>
+                  <h3 className="text-xl font-bold text-gray-900 mb-3">Student Success</h3>
+                  <p className="text-gray-600">
+                    With regular tests, doubt clearing, and personalized feedback, we ensure
+                    students stay on track and achieve results.
+                  </p>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      )}
+        )
+      }
 
       {/* Features Dropdown */}
-      {fullScreenDropdown === 'features' && (
-        <div
-          className="fixed inset-0 bg-gray-50 z-50 overflow-y-auto dropdown-content"
-          style={{ top: '80px' }}
-        >
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 animate-dropdown-enter">
-            <div className="mb-8">
-              <h2 className="text-3xl font-bold text-gray-900 text-center mb-4">Why Choose Edu Altutors?</h2>
-              <p className="text-xl text-gray-600 text-center">Experience the best online learning platform</p>
-            </div>
-
-            {/* Features Grid */}
-            <div className="grid md:grid-cols-2 lg:grid-cols-5 gap-8">
-              <div className="text-center p-8 bg-gradient-to-br from-purple-50 to-pink-50 rounded-2xl hover:shadow-lg transition">
-                <div className="bg-gradient-to-br from-purple-500 to-pink-500 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6">
-                  <Video className="w-10 h-10 text-white" />
-                </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-3">Live Interactive Classes</h3>
-                <p className="text-gray-600">Real-time interaction with expert teachers</p>
+      {
+        fullScreenDropdown === 'features' && (
+          <div
+            className="fixed inset-0 bg-gray-50 z-50 overflow-y-auto dropdown-content"
+            style={{ top: '80px' }}
+          >
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 animate-dropdown-enter">
+              <button
+                onClick={handleDropdownClose}
+                className="flex items-center gap-2 text-primary-600 font-black uppercase tracking-widest mb-12 hover:gap-4 transition-all group"
+              >
+                <ChevronDown className="w-5 h-5 rotate-90" />
+                <span>Back to Main</span>
+              </button>
+              <div className="mb-8">
+                <h2 className="text-3xl font-bold text-gray-900 text-center mb-4">Why Choose Edu Altutors?</h2>
+                <p className="text-xl text-gray-600 text-center">Experience the best online learning platform</p>
               </div>
 
-              <div className="text-center p-8 bg-gradient-to-br from-blue-50 to-cyan-50 rounded-2xl hover:shadow-lg transition">
-                <div className="bg-gradient-to-br from-blue-500 to-cyan-500 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6">
-                  <GraduationCap className="w-10 h-10 text-white" />
+              {/* Features Grid */}
+              <div className="grid md:grid-cols-2 lg:grid-cols-5 gap-8">
+                <div className="text-center p-8 bg-gradient-to-br from-purple-50 to-pink-50 rounded-2xl hover:shadow-lg transition">
+                  <div className="bg-gradient-to-br from-purple-500 to-pink-500 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <Video className="w-10 h-10 text-white" />
+                  </div>
+                  <h3 className="text-xl font-bold text-gray-900 mb-3">Live Interactive Classes</h3>
+                  <p className="text-gray-600">Real-time interaction with expert teachers</p>
                 </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-3">Expert Faculty</h3>
-                <p className="text-gray-600">Learn from India's top educators</p>
-              </div>
 
-              <div className="text-center p-8 bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl hover:shadow-lg transition">
-                <div className="bg-gradient-to-br from-green-500 to-emerald-500 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6">
-                  <BookOpen className="w-10 h-10 text-white" />
+                <div className="text-center p-8 bg-gradient-to-br from-blue-50 to-cyan-50 rounded-2xl hover:shadow-lg transition">
+                  <div className="bg-gradient-to-br from-blue-500 to-cyan-500 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <GraduationCap className="w-10 h-10 text-white" />
+                  </div>
+                  <h3 className="text-xl font-bold text-gray-900 mb-3">Expert Faculty</h3>
+                  <p className="text-gray-600">Learn from India's top educators</p>
                 </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-3">Study Material</h3>
-                <p className="text-gray-600">Comprehensive notes and resources</p>
-              </div>
 
-              <div className="text-center p-8 bg-gradient-to-br from-yellow-50 to-orange-50 rounded-2xl hover:shadow-lg transition">
-                <div className="bg-gradient-to-br from-yellow-500 to-orange-500 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6">
-                  <HelpCircle className="w-10 h-10 text-white" />
+                <div className="text-center p-8 bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl hover:shadow-lg transition">
+                  <div className="bg-gradient-to-br from-green-500 to-emerald-500 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <BookOpen className="w-10 h-10 text-white" />
+                  </div>
+                  <h3 className="text-xl font-bold text-gray-900 mb-3">Study Material</h3>
+                  <p className="text-gray-600">Comprehensive notes and resources</p>
                 </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-3">Instant Doubt Clearing</h3>
-                <p className="text-gray-600">Get your doubts solved immediately</p>
-              </div>
 
-              <div className="text-center p-8 bg-gradient-to-br from-red-50 to-pink-50 rounded-2xl hover:shadow-lg transition">
-                <div className="bg-gradient-to-br from-red-500 to-pink-500 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6">
-                  <Trophy className="w-10 h-10 text-white" />
+                <div className="text-center p-8 bg-gradient-to-br from-yellow-50 to-orange-50 rounded-2xl hover:shadow-lg transition">
+                  <div className="bg-gradient-to-br from-yellow-500 to-orange-500 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <HelpCircle className="w-10 h-10 text-white" />
+                  </div>
+                  <h3 className="text-xl font-bold text-gray-900 mb-3">Instant Doubt Clearing</h3>
+                  <p className="text-gray-600">Get your doubts solved immediately</p>
                 </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-3">Proven Results</h3>
-                <p className="text-gray-600">98% success rate in exams</p>
+
+                <div className="text-center p-8 bg-gradient-to-br from-red-50 to-pink-50 rounded-2xl hover:shadow-lg transition">
+                  <div className="bg-gradient-to-br from-red-500 to-pink-500 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <Trophy className="w-10 h-10 text-white" />
+                  </div>
+                  <h3 className="text-xl font-bold text-gray-900 mb-3">Proven Results</h3>
+                  <p className="text-gray-600">98% success rate in exams</p>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      )}
+        )
+      }
 
       {/* Testimonials Dropdown */}
-      {fullScreenDropdown === 'testimonials-section' && (
-        <div
-          className="fixed inset-0 bg-gray-50 z-50 overflow-y-auto dropdown-content"
-          style={{ top: '80px' }}
-        >
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 animate-dropdown-enter">
-            <div className="mb-16 text-center">
-              <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">What Students Say</h2>
-              <p className="text-xl text-gray-600">Hear from our successful students</p>
-            </div>
-
-            {/* Testimonials Grid */}
-            <div className="grid md:grid-cols-3 gap-8">
-              <div className="bg-white p-8 rounded-2xl shadow-lg hover:shadow-xl transition">
-                <div className="flex items-center mb-4">
-                  <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-white font-bold">
-                    RS
-                  </div>
-                  <div className="ml-4">
-                    <h4 className="font-bold text-gray-900">Rahul Sharma</h4>
-                    <div className="flex text-yellow-400 mt-1">
-                      {[...Array(5)].map((_, i) => (
-                        <Star key={i} className="w-4 h-4 fill-current" />
-                      ))}
-                    </div>
-                  </div>
-                </div>
-                <p className="text-gray-600 italic">&quot;The live classes are incredibly interactive. The faculty is amazing and always ready to help. I scored AIR 250 in JEE Mains thanks to EduAiTutors!&quot;</p>
+      {
+        fullScreenDropdown === 'testimonials-section' && (
+          <div
+            className="fixed inset-0 bg-gray-50 z-50 overflow-y-auto dropdown-content"
+            style={{ top: '80px' }}
+          >
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 animate-dropdown-enter">
+              <div className="mb-16 text-center">
+                <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">What Students Say</h2>
+                <p className="text-xl text-gray-600">Hear from our successful students</p>
               </div>
 
-              <div className="bg-white p-8 rounded-2xl shadow-lg hover:shadow-xl transition">
-                <div className="flex items-center mb-4">
-                  <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-full flex items-center justify-center text-white font-bold">
-                    PK
-                  </div>
-                  <div className="ml-4">
-                    <h4 className="font-bold text-gray-900">Priya Krishnan</h4>
-                    <div className="flex text-yellow-400 mt-1">
-                      {[...Array(5)].map((_, i) => (
-                        <Star key={i} className="w-4 h-4 fill-current" />
-                      ))}
+              {/* Testimonials Grid */}
+              <div className="grid md:grid-cols-3 gap-8">
+                <div className="bg-white p-8 rounded-2xl shadow-lg hover:shadow-xl transition">
+                  <div className="flex items-center mb-4">
+                    <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-white font-bold">
+                      RS
+                    </div>
+                    <div className="ml-4">
+                      <h4 className="font-bold text-gray-900">Rahul Sharma</h4>
+                      <div className="flex text-yellow-400 mt-1">
+                        {[...Array(5)].map((_, i) => (
+                          <Star key={i} className="w-4 h-4 fill-current" />
+                        ))}
+                      </div>
                     </div>
                   </div>
+                  <p className="text-gray-600 italic">&quot;The live classes are incredibly interactive. The faculty is amazing and always ready to help. I scored AIR 250 in JEE Mains thanks to EduAiTutors!&quot;</p>
                 </div>
-                <p className="text-gray-600 italic">&quot;Best decision I made for my NEET preparation. The study materials are comprehensive and the doubt clearing sessions are super helpful.&quot;</p>
-              </div>
 
-              <div className="bg-white p-8 rounded-2xl shadow-lg hover:shadow-xl transition">
-                <div className="flex items-center mb-4">
-                  <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-500 rounded-full flex items-center justify-center text-white font-bold">
-                    AM
-                  </div>
-                  <div className="ml-4">
-                    <h4 className="font-bold text-gray-900">Aditya Mehta</h4>
-                    <div className="flex text-yellow-400 mt-1">
-                      {[...Array(5)].map((_, i) => (
-                        <Star key={i} className="w-4 h-4 fill-current" />
-                      ))}
+                <div className="bg-white p-8 rounded-2xl shadow-lg hover:shadow-xl transition">
+                  <div className="flex items-center mb-4">
+                    <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-full flex items-center justify-center text-white font-bold">
+                      PK
+                    </div>
+                    <div className="ml-4">
+                      <h4 className="font-bold text-gray-900">Priya Krishnan</h4>
+                      <div className="flex text-yellow-400 mt-1">
+                        {[...Array(5)].map((_, i) => (
+                          <Star key={i} className="w-4 h-4 fill-current" />
+                        ))}
+                      </div>
                     </div>
                   </div>
+                  <p className="text-gray-600 italic">&quot;Best decision I made for my NEET preparation. The study materials are comprehensive and the doubt clearing sessions are super helpful.&quot;</p>
                 </div>
-                <p className="text-gray-600 italic">&quot;I scored 98% in my CBSE board exams. The teachers explain concepts so well that even the toughest topics become easy to understand.&quot;</p>
+
+                <div className="bg-white p-8 rounded-2xl shadow-lg hover:shadow-xl transition">
+                  <div className="flex items-center mb-4">
+                    <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-500 rounded-full flex items-center justify-center text-white font-bold">
+                      AM
+                    </div>
+                    <div className="ml-4">
+                      <h4 className="font-bold text-gray-900">Aditya Mehta</h4>
+                      <div className="flex text-yellow-400 mt-1">
+                        {[...Array(5)].map((_, i) => (
+                          <Star key={i} className="w-4 h-4 fill-current" />
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                  <p className="text-gray-600 italic">&quot;I scored 98% in my CBSE board exams. The teachers explain concepts so well that even the toughest topics become easy to understand.&quot;</p>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      )}
+        )
+      }
 
       {/* Mobile Menu */}
-      {mobileMenuOpen && (
-        <div className="lg:hidden bg-gray-50 border-t fixed inset-0 z-50" style={{ top: '80px' }}>
-          <div className="px-4 py-4 space-y-3 h-full overflow-y-auto">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-bold text-gray-900">Menu</h3>
-              <button
-                onClick={() => setMobileMenuOpen(false)}
-                className="text-gray-500 hover:text-gray-900"
-              >
-                <X className="w-6 h-6" />
-              </button>
-            </div>
-            <Link href="/" className="block text-gray-700 hover:text-primary-600 font-medium py-2" onClick={() => setMobileMenuOpen(false)}>Home</Link>
-            <Link href="#courses" className="block text-gray-700 hover:text-primary-600 font-medium py-2" onClick={() => setMobileMenuOpen(false)}>Study</Link>
-            <Link href="#features" className="block text-gray-700 hover:text-primary-600 font-medium py-2" onClick={() => setMobileMenuOpen(false)}>Features</Link>
-            <Link href="#about" className="block text-gray-700 hover:text-primary-600 font-medium py-2" onClick={() => setMobileMenuOpen(false)}>About</Link>
-            <Link href="#testimonials" className="block text-gray-700 hover:text-primary-600 font-medium py-2" onClick={() => setMobileMenuOpen(false)}>Testimonials</Link>
-            {user ? (
-              <div className="pt-4 border-t mt-4 space-y-4">
-                <Link
-                  href="/dashboard"
-                  className="flex items-center space-x-3 p-3 bg-white rounded-xl border border-gray-100"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  <div className="w-10 h-10 rounded-full bg-primary-600 flex items-center justify-center text-white font-bold">
-                    {(user.fullName || user.name || 'U').charAt(0).toUpperCase()}
-                  </div>
-                  <div>
-                    <p className="font-bold text-gray-900">{user.fullName || user.name || 'User'}</p>
-                    <p className="text-xs text-gray-500">Go to Dashboard</p>
-                  </div>
-                </Link>
+      {
+        mobileMenuOpen && (
+          <div className="lg:hidden bg-gray-50 border-t fixed inset-0 z-50" style={{ top: '80px' }}>
+            <div className="px-4 py-4 space-y-3 h-full overflow-y-auto">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-bold text-gray-900">Menu</h3>
                 <button
-                  onClick={() => { handleLogout(); setMobileMenuOpen(false); }}
-                  className="w-full flex items-center justify-center space-x-2 bg-red-50 text-red-600 px-6 py-3 rounded-xl font-bold hover:bg-red-100 transition"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="text-gray-500 hover:text-gray-900"
                 >
-                  <LogOut className="w-5 h-5" />
-                  <span>Logout</span>
+                  <X className="w-6 h-6" />
                 </button>
               </div>
-            ) : (
-              <div className="pt-4 border-t mt-4">
-                <Link
-                  href="/login?mode=signup"
-                  className="block text-gray-700 hover:text-primary-600 font-medium mb-3 py-2"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  Register
-                </Link>
-                <Link href="/login" className="block w-full bg-primary-600 text-white px-6 py-3 rounded-lg font-semibold text-center hover:bg-primary-700 transition" onClick={() => setMobileMenuOpen(false)}>
-                  Login
-                </Link>
-              </div>
-            )}
+              <Link href="/" className="block text-gray-700 hover:text-primary-600 font-medium py-2" onClick={() => setMobileMenuOpen(false)}>Home</Link>
+              <Link href="/courses" className="block text-gray-700 hover:text-primary-600 font-medium py-2" onClick={() => setMobileMenuOpen(false)}>Courses</Link>
+              <Link href="/features" className="block text-gray-700 hover:text-primary-600 font-medium py-2" onClick={() => setMobileMenuOpen(false)}>Features</Link>
+              <Link href="/#about" className="block text-gray-700 hover:text-primary-600 font-medium py-2" onClick={() => setMobileMenuOpen(false)}>About</Link>
+              <Link href="/#testimonials" className="block text-gray-700 hover:text-primary-600 font-medium py-2" onClick={() => setMobileMenuOpen(false)}>Testimonials</Link>
+              {user ? (
+                <div className="pt-4 border-t mt-4 space-y-4">
+                  <Link
+                    href="/dashboard"
+                    className="flex items-center space-x-3 p-3 bg-white rounded-xl border border-gray-100"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <div className="w-10 h-10 rounded-full bg-primary-600 flex items-center justify-center text-white font-bold">
+                      {(user.name || 'U').charAt(0).toUpperCase()}
+                    </div>
+                    <div>
+                      <p className="font-bold text-gray-900">{user.name || 'User'}</p>
+                      <p className="text-xs text-gray-500">Go to Dashboard</p>
+                    </div>
+                  </Link>
+                  <button
+                    onClick={() => { handleLogout(); setMobileMenuOpen(false); }}
+                    className="w-full flex items-center justify-center space-x-2 bg-red-50 text-red-600 px-6 py-3 rounded-xl font-bold hover:bg-red-100 transition"
+                  >
+                    <LogOut className="w-5 h-5" />
+                    <span>Logout</span>
+                  </button>
+                </div>
+              ) : (
+                <div className="pt-4 border-t mt-4">
+                  <Link
+                    href="/login?mode=signup"
+                    className="block text-gray-700 hover:text-primary-600 font-medium mb-3 py-2"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    Register
+                  </Link>
+                  <Link href="/login" className="block w-full bg-primary-600 text-white px-6 py-3 rounded-lg font-semibold text-center hover:bg-primary-700 transition" onClick={() => setMobileMenuOpen(false)}>
+                    Login
+                  </Link>
+                </div>
+              )}
+            </div>
           </div>
-        </div>
-      )}
+        )
+      }
     </>
   )
 }

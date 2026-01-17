@@ -8,7 +8,12 @@ import HeroSlider from '@/components/HeroSlider'
 import CoursesSection from '@/components/CoursesSection'
 import EnrollmentForm from '@/components/EnrollmentForm'
 import PackagesSection from '@/components/PackagesSection'
-import { ArrowRight } from 'lucide-react'
+import WhyChooseSection from '@/components/WhyChooseSection'
+import AIPreviewSection from '@/components/AIPreviewSection'
+import AboutSection from '@/components/AboutSection'
+import FeaturesSection from '@/components/FeaturesSection'
+import LeadCaptureForm from '@/components/LeadCaptureForm'
+import { ArrowRight, Sparkles, User, ShieldCheck } from 'lucide-react'
 import { motion } from 'framer-motion'
 
 export default function Home() {
@@ -56,107 +61,79 @@ export default function Home() {
 
       {/* Hero Section */}
       <HeroSlider>
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.8 }}
-          className="text-center max-w-4xl mx-auto"
-        >
-          <motion.h1
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2, duration: 0.6 }}
-            className="text-2xl md:text-4xl font-bold mb-6 leading-tight drop-shadow-lg"
-          >
-            Smart Learning. Powered by AI. Designed for Your Success.
-          </motion.h1>
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.4, duration: 0.6 }}
-            className="text-xl md:text-2xl mb-8 text-gray-100 drop-shadow"
-          >
-            Find the right learning pathway for your goals with expert-led courses, interactive classes, and personalized support.
-          </motion.p>
+        <div className="text-center max-w-5xl mx-auto">
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.6, duration: 0.6 }}
-            className="flex flex-col sm:flex-row gap-4 justify-center"
+            transition={{ duration: 0.8 }}
           >
-            <Link
-              href="/packages"
-              className="bg-primary-600 hover:bg-primary-700 text-white px-8 py-4 rounded-lg font-semibold text-lg transition shadow-lg hover:shadow-xl inline-flex items-center justify-center transform hover:scale-105 active:scale-95"
-            >
-              Explore packages
-              <ArrowRight className="ml-2 w-5 h-5" />
-            </Link>
+            <span className="inline-block px-5 py-2 bg-primary-600/20 backdrop-blur-md text-primary-400 rounded-full text-xs font-black uppercase tracking-[0.2em] mb-8 border border-primary-500/30">
+              Next-Gen AI Learning
+            </span>
+            <h1 className="text-4xl md:text-7xl lg:text-8xl font-black mb-8 leading-[1.05] tracking-tighter text-white drop-shadow-2xl">
+              Smart Learning. <br />
+              <span className="text-primary-500">Powered by AI.</span>
+            </h1>
+            <p className="text-xl md:text-2xl mb-12 text-white/80 max-w-3xl mx-auto font-medium leading-relaxed">
+              Find the right learning pathway for your goals with expert-led courses,
+              interactive classes, and personalized support designed for your excellence.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
+              <Link
+                href="/packages"
+                className="group bg-primary-600 hover:bg-primary-500 text-white px-10 py-5 rounded-full font-black text-sm uppercase tracking-widest transition-all shadow-2xl shadow-primary-600/40 flex items-center gap-3 hover:-translate-y-1 active:scale-95"
+              >
+                Explore All packages
+                <ArrowRight className="w-5 h-5 transition-transform group-hover:translate-x-1" />
+              </Link>
+              <Link
+                href="/courses"
+                className="px-10 py-5 rounded-full font-black text-sm uppercase tracking-widest text-white border border-white/20 hover:bg-white hover:text-black transition-all backdrop-blur-sm"
+              >
+                View Courses
+              </Link>
+            </div>
           </motion.div>
-        </motion.div>
+        </div>
       </HeroSlider>
 
       <PackagesSection variant="full" />
 
-      {/* Courses Section - RESTORED FUNCTIONALITY */}
-      <CoursesSection
-        selectedBoard={selectedBoard}
-        setSelectedBoard={setSelectedBoard}
-        onSubjectChange={updateSelectedSubjects}
-        onEnrollClick={openEnrollForm}
-      />
+      <WhyChooseSection />
 
-      {/* Why Study With Us */}
-      <motion.section
-        {...fadeIn}
-        className="bg-gray-50"
-      >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <motion.h2 {...fadeIn} className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Why Study With Us</motion.h2>
-            <motion.p {...fadeIn} className="text-xl text-gray-600 max-w-2xl mx-auto">
-              We&apos;re a new-age learning platform built around AI models and AI-trained tutors to make concepts clear, fast and engaging.
-            </motion.p>
-          </div>
-          <motion.div
-            variants={staggerContainer}
-            initial="initial"
-            whileInView="whileInView"
-            viewport={{ once: true }}
-            className="grid md:grid-cols-3 gap-8 mb-12"
-          >
-            {[
-              { title: 'AI-Powered Learning', desc: 'Every course is designed around smart AI models that personalise practice, explain doubts and adapt to how you learn.', img: '/whystudy1.png' },
-              { title: 'AI-Trained Tutors', desc: 'Human tutors are trained to work with AI tools, so you get both expert guidance and instant AI support in every session.', img: '/whystudy2.png' },
-              { title: 'Always-On Help', desc: 'Ask questions any time, get AI-powered explanations in seconds, and use our practice tools whenever you want to study.', img: '/whystudy3.png', position: 'object-top' },
-            ].map((item, idx) => (
-              <motion.div
-                key={idx}
-                variants={cardVariants}
-                className="bg-white rounded-3xl overflow-hidden shadow-sm border border-gray-100 hover:shadow-xl transition-all duration-300 group flex flex-col h-full"
-              >
-                <div className="h-64 overflow-hidden relative">
-                  <img
-                    src={item.img}
-                    alt={item.title}
-                    className={`w-full h-full object-cover ${item.position || 'object-center'} transition-transform duration-500 group-hover:scale-110`}
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-white via-transparent to-transparent opacity-0 group-hover:opacity-20 transition-opacity"></div>
-                </div>
-                <div className="p-8 flex flex-col flex-grow">
-                  <h3 className="text-2xl font-bold text-gray-900 mb-3 group-hover:text-primary-600 transition-colors">
-                    {item.title}
-                  </h3>
-                  <p className="text-gray-600 leading-relaxed leading-relaxed">
-                    {item.desc}
-                  </p>
-                </div>
-              </motion.div>
-            ))}
+      {/* Courses Section - Banner to move to /courses */}
+      <CoursesSection />
+
+      <AIPreviewSection />
+
+
+
+      <AboutSection />
+
+      {/* Lead Capture Section */}
+      <section className="py-20 bg-gradient-to-br from-slate-50 via-white to-primary-50 relative overflow-hidden">
+        <div className="absolute inset-0 bg-grid-slate-200/50 [mask-image:linear-gradient(0deg,white,rgba(255,255,255,0.6))]" />
+        <div className="absolute top-0 right-0 w-96 h-96 bg-primary-600/10 rounded-full blur-[120px]" />
+        <div className="absolute bottom-0 left-0 w-96 h-96 bg-indigo-600/10 rounded-full blur-[120px]" />
+
+        <div className="max-w-7xl mx-auto px-6 relative z-10">
+          <motion.div {...fadeIn} className="text-center mb-12">
+            <span className="inline-block px-5 py-2 bg-primary-600/10 backdrop-blur-sm text-primary-700 rounded-full text-xs font-black uppercase tracking-[0.2em] mb-4">
+              🎯 Take The First Step
+            </span>
+            <h2 className="text-4xl md:text-5xl font-black text-slate-900 mb-4 tracking-tight">
+              Ready to Transform Your Future?
+            </h2>
+            <p className="text-xl text-slate-600 max-w-2xl mx-auto font-medium">
+              Get personalized guidance from our experts. Limited seats for this month!
+            </p>
+          </motion.div>
+
+          <motion.div {...fadeIn} transition={{ delay: 0.2 }}>
+            <LeadCaptureForm variant="inline" />
           </motion.div>
         </div>
-      </motion.section>
-
-      {/* Student Testimonials removed as per request */}
+      </section>
 
       {/* Enrollment Form - RESTORED */}
       {showEnrollForm && (

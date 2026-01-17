@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Image from 'next/image'
+import { motion, AnimatePresence } from 'framer-motion'
 
 interface HeroSliderProps {
     children: React.ReactNode
@@ -19,41 +20,63 @@ export default function HeroSlider({ children }: HeroSliderProps) {
     useEffect(() => {
         const interval = setInterval(() => {
             setCurrentIndex((prevIndex) => (prevIndex + 1) % images.length)
-        }, 5000)
+        }, 6000)
 
         return () => clearInterval(interval)
     }, [images.length])
 
     return (
-        <section className="relative text-white py-20 md:py-32 overflow-hidden bg-gray-900 min-h-[600px] flex items-center">
-            {/* Background Images */}
-            {/* Background Images Container */}
-            <div
-                className="absolute inset-0 flex transition-transform duration-1000 ease-in-out h-full"
-                style={{ transform: `translateX(-${currentIndex * 100}%)`, width: `${images.length * 100}%` }}
-            >
-                {images.map((img, index) => (
-                    <div
-                        key={img}
-                        className="relative w-full h-full flex-shrink-0"
+        <section className="relative min-h-[85vh] md:min-h-screen flex items-center overflow-hidden bg-black">
+            {/* Background Layers */}
+            <div className="absolute inset-0 z-0">
+                <AnimatePresence mode="wait">
+                    <motion.div
+                        key={currentIndex}
+                        initial={{ opacity: 0, scale: 1.15 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.95 }}
+                        transition={{ duration: 2.5, ease: "easeOut" }}
+                        className="absolute inset-0"
                     >
                         <Image
-                            src={img}
-                            alt={`Slide ${index + 1}`}
+                            src={images[currentIndex]}
+                            alt="Background"
                             fill
                             className="object-cover"
-                            priority={index === 0}
+                            priority
                         />
-                        {/* Overlay for each image */}
-                        <div className="absolute inset-0 bg-gradient-to-br from-secondary-900/80 via-secondary-800/70 to-secondary-900/80" />
-                    </div>
+                        {/* Intelligent Overlays */}
+                        <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/40 to-transparent" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-black/20" />
+                    </motion.div>
+                </AnimatePresence>
+            </div>
+
+            {/* Content Container */}
+            <div className="relative z-10 w-full max-w-[1440px] mx-auto px-6 md:px-12 lg:px-20 pt-20">
+                <motion.div
+                    initial={{ opacity: 0, y: 40 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 1, delay: 0.2 }}
+                    className="w-full"
+                >
+                    {children}
+                </motion.div>
+            </div>
+
+            {/* Decorative Elements */}
+            <div className="absolute bottom-12 right-12 z-20 hidden md:flex items-center gap-4">
+                {images.map((_, i) => (
+                    <button
+                        key={i}
+                        onClick={() => setCurrentIndex(i)}
+                        className={`h-1.5 rounded-full transition-all duration-500 ${currentIndex === i ? 'bg-primary-500 w-12' : 'bg-white/30 w-4 hover:bg-white/50'
+                            }`}
+                    />
                 ))}
             </div>
 
-            {/* Content */}
-            <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
-                {children}
-            </div>
+
         </section>
     )
 }
