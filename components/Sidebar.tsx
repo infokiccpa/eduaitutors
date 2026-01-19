@@ -16,7 +16,8 @@ import {
   BarChart4,
   Briefcase,
   Heart,
-  Baby
+  Baby,
+  DollarSign
 } from 'lucide-react'
 import { useRouter, usePathname } from 'next/navigation'
 import { signOut, useSession } from 'next-auth/react'
@@ -67,6 +68,8 @@ export default function Sidebar() {
     const superAdminItems = [
       { icon: Briefcase, label: 'Platform Stats', path: '/superadmin' },
       { icon: Users, label: 'Manage Admins', path: '/superadmin/admins' },
+      { icon: Users, label: 'User Directory', path: '/superadmin/users' },
+      { icon: DollarSign, label: 'Transactions', path: '/superadmin/payments' },
       { icon: Settings, label: 'System Settings', path: '/superadmin/config' },
     ]
 

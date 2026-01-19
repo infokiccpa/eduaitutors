@@ -41,6 +41,18 @@ const UserSchema = new Schema({
         enum: ['student', 'admin', 'superadmin', 'mentor', 'parent'],
         default: 'student',
     },
+    phone: {
+        type: String,
+        default: null,
+    },
+    isEmailVerified: {
+        type: Boolean,
+        default: false,
+    },
+    isPhoneVerified: {
+        type: Boolean,
+        default: false,
+    }
 }, { timestamps: true });
 
 // Force update schema for development

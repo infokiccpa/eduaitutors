@@ -11,35 +11,39 @@ export async function GET(req: Request) {
         const session = await getServerSession(authOptions);
 
         // Authorization check
-        if (!session || (session.user as any).role !== 'admin') {
+        if (!session || !['admin', 'superadmin'].includes((session.user as any).role)) {
             return NextResponse.json({ message: 'Unauthorized. Admin access required.' }, { status: 403 });
         }
 
         await dbConnect();
+        const Payment = (await import("@/models/Payment")).default;
 
         // Aggregate core metrics
         const [
             totalStudents,
+            totalUsers,
             totalQuizzesTaken,
             totalActivities,
-            recentUsers,
-            recentResults
+            payments
         ] = await Promise.all([
             User.countDocuments({ role: 'student' }),
+            User.countDocuments({}),
             QuizResult.countDocuments({}),
             Activity.countDocuments({}),
-            User.find({ role: 'student' }).sort({ createdAt: -1 }).limit(5).select('name email package createdAt'),
-            QuizResult.find({}).sort({ createdAt: -1 }).limit(5).populate('userId', 'name').populate('quizId', 'title')
+            Payment.find({ status: 'success' }).select('amount')
         ]);
 
+        const totalRevenue = payments.reduce((acc: number, curr: any) => acc + (parseFloat(curr.amount) || 0), 0);
+
         return NextResponse.json({
+            totalRevenue: totalRevenue.toLocaleString(),
+            activeUsers: totalUsers,
             metrics: {
                 totalStudents,
                 totalQuizzesTaken,
                 totalActivities,
             },
-            recentUsers,
-            recentResults
+            // Keep specific structure if other dashboards use it, but add top level fields for superadmin
         });
 
     } catch (error: any) {

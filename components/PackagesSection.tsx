@@ -6,6 +6,7 @@ import { ArrowRight, CheckCircle2, ChevronDown, X, Package, ChevronLeft, Chevron
 import { motion, AnimatePresence, useMotionValue, useSpring, useTransform } from 'framer-motion'
 import { useRouter } from 'next/navigation'
 import { toast } from 'react-toastify'
+import { useSession } from 'next-auth/react'
 
 type Props = {
   variant?: 'full' | 'compact'
@@ -13,6 +14,26 @@ type Props = {
   onlySubscribed?: boolean
   hideHeader?: boolean
 }
+
+const submitPayUForm = (params: any) => {
+  const form = document.createElement("form");
+  form.setAttribute("method", "post");
+  form.setAttribute("action", params.action);
+  form.setAttribute("target", "_self");
+
+  Object.keys(params).forEach(key => {
+    if (key === 'action') return;
+    const input = document.createElement("input");
+    input.setAttribute("type", "hidden");
+    input.setAttribute("name", key);
+    input.setAttribute("value", params[key]);
+    form.appendChild(input);
+  });
+
+  document.body.appendChild(form);
+  form.submit();
+  document.body.removeChild(form);
+};
 
 const packagesData = [
   { title: 'Foundation Builder', subtitle: 'Strengthens core concepts through structured lessons and step-by-step learning to build confidence and consistency.', file: 'foundation1.jpeg', price: 4999 },
@@ -130,12 +151,18 @@ export default function PackagesSection({ variant = 'full', onLinkClick, onlySub
   const [scrollProgress, setScrollProgress] = React.useState(0)
   const scrollRef = React.useRef<HTMLDivElement>(null)
 
+  const { data: session } = useSession()
+
   React.useEffect(() => {
-    const storedUser = localStorage.getItem('currentUser')
-    if (storedUser) {
-      setUser(JSON.parse(storedUser))
+    if (session?.user) {
+      setUser(session.user)
+    } else {
+      const storedUser = localStorage.getItem('currentUser')
+      if (storedUser) {
+        setUser(JSON.parse(storedUser))
+      }
     }
-  }, [])
+  }, [session])
 
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
     const target = e.target as HTMLDivElement
@@ -158,32 +185,43 @@ export default function PackagesSection({ variant = 'full', onLinkClick, onlySub
     if (!grade || !board || subjects.length === 0) return
 
     if (user) {
-      // User is already logged in, update their package in DB
-      const updateData = {
-        package: selectedPkg.title,
-        price: selectedPkg.price.toString(),
-        grade,
-        board,
-        subjects
-      }
+      // Initiate PayU Payment
+      const width = window.innerWidth;
+      const height = window.innerHeight;
 
-      fetch('/api/user/profile', {
-        method: 'PATCH',
+      toast.info("Initiating Payment...", { autoClose: false, toastId: 'payment-toast' });
+
+      fetch('/api/payment/initiate', {
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updateData)
+        body: JSON.stringify({
+          amount: selectedPkg.price,
+          productinfo: selectedPkg.title,
+          firstname: user.name,
+          email: user.email,
+          phone: "9999999999", // Default phone as it is required by PayU
+          userId: user._id || user.id,
+          metadata: {
+            grade,
+            board,
+            subjects
+          }
+        })
       })
         .then(res => res.json())
         .then(data => {
-          toast.success(`Successfully enrolled in ${selectedPkg.title}!`)
-          setSelectedPkg(null)
-          setSubjects([])
-          // Refresh the page to update session data
-          window.location.reload()
+          toast.dismiss('payment-toast');
+          if (data.error) {
+            toast.error(`Payment Error: ${data.error}`);
+            return;
+          }
+          submitPayUForm(data);
         })
         .catch(err => {
-          console.error('Update Error:', err)
-          toast.error('Failed to update subscription. Please try again.')
-        })
+          console.error('Payment Init Error:', err);
+          toast.dismiss('payment-toast');
+          toast.error('Failed to initiate payment. Please try again.');
+        });
 
       return
     }

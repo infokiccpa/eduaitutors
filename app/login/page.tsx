@@ -5,7 +5,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ArrowLeft, ArrowRight, Mail, Lock, Eye, EyeOff, Github, Chrome, ShieldCheck, User, CreditCard, ChevronRight, CheckCircle, Sparkles } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Mail, Lock, Eye, EyeOff, User, CheckCircle, ShieldCheck } from 'lucide-react'
 import { toast } from 'react-toastify'
 import { signIn, useSession } from 'next-auth/react'
 
@@ -25,40 +25,53 @@ function LoginForm() {
   const [showPassword, setShowPassword] = useState(false)
   const [isLogin, setIsLogin] = useState(mode !== 'signup')
   const [isLoading, setIsLoading] = useState(false)
-  const [step, setStep] = useState(1) // 1: Details, 2: Payment
   const router = useRouter()
 
   useEffect(() => {
     // Sync isLogin with mode param if it changes
     setIsLogin(mode !== 'signup')
-    setStep(1)
   }, [mode])
+
+  // We do not auto-redirect authenticated users here immediately because 
+  // they might be here to purchase a package. 
+  // If they are authenticated AND there is NO package param, we redirect.
+  // If they are authenticated AND there IS a package param, they see "Continue to Payment".
 
   const { data: session, status } = useSession()
 
   useEffect(() => {
-    if (status === 'authenticated') {
+    if (status === 'authenticated' && !packageName) {
       router.push('/dashboard')
     }
-  }, [status, router])
+  }, [status, router, packageName])
 
-  const handleNextStep = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (isLogin) {
-      handleAuth()
-    } else {
-      if (step === 1) {
-        setStep(2)
-      } else {
-        handleAuth()
-      }
-    }
-  }
+
+  const submitPayUForm = (params: any) => {
+    const form = document.createElement("form");
+    form.setAttribute("method", "post");
+    form.setAttribute("action", params.action);
+    form.setAttribute("target", "_self");
+
+    Object.keys(params).forEach(key => {
+      if (key === 'action') return;
+      const input = document.createElement("input");
+      input.setAttribute("type", "hidden");
+      input.setAttribute("name", key);
+      input.setAttribute("value", params[key]);
+      form.appendChild(input);
+    });
+
+    document.body.appendChild(form);
+    form.submit();
+    document.body.removeChild(form);
+  };
 
   const handleAuth = async () => {
     setIsLoading(true)
 
     try {
+      let success = false;
+
       if (isLogin) {
         // NextAuth Login logic
         const res = await signIn('credentials', {
@@ -70,9 +83,9 @@ function LoginForm() {
         if (res?.error) {
           toast.error(res.error)
           setIsLoading(false)
+          return;
         } else {
-          toast.success('Welcome back! Logging you in...')
-          setTimeout(() => router.push('/dashboard'), 1000)
+          success = true;
         }
       } else {
         // Registration Logic via our API
@@ -83,26 +96,83 @@ function LoginForm() {
             name,
             email,
             password,
-            package: packageName,
-            price: packagePrice,
-            grade,
-            board,
-            subjects
+            // We do NOT enroll them yet, we just create the user. Enrollment happens via Payment.
           })
         })
 
         const data = await res.json()
 
         if (res.ok) {
-          toast.success('Registration successful! Please sign in.')
-          setIsLogin(true)
-          setStep(1)
-          setIsLoading(false)
+          toast.success('Account created! Signing you in...')
+          // Auto login after signup
+          const loginRes = await signIn('credentials', {
+            redirect: false,
+            email,
+            password
+          })
+          if (loginRes?.ok) {
+            success = true;
+          } else {
+            toast.error("Auto-login failed. Please sign in manually.");
+            setIsLogin(true);
+            setIsLoading(false);
+            return;
+          }
         } else {
           toast.error(data.message || 'Registration failed')
           setIsLoading(false)
+          return;
         }
       }
+
+      if (success) {
+        if (packageName && packagePrice) {
+          toast.info("Initiating Payment...", { autoClose: false, toastId: 'payment-toast' });
+
+          // Initiate Payment
+          fetch('/api/payment/initiate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              amount: packagePrice,
+              productinfo: packageName,
+              firstname: name || email.split('@')[0], // Fallback name if logging in without name input
+              email: email,
+              phone: "9999999999",
+              // We assume the backend can associate the user via the authenticated session or email if userId is missing.
+              // However, we passed userId explicitly in previous implementation. 
+              // Let's rely on the session being available to the API route OR pass metadata that allows association.
+              // For robustness, we passed userId: user._id in frontend packages section. 
+              // Here we don't have user object handy in 'success' block of handleAuth easily.
+              // But we can let the API route handle looking up user by email if userId is missing.
+              metadata: {
+                grade,
+                board,
+                subjects: subjects
+              }
+            })
+          })
+            .then(res => res.json())
+            .then(data => {
+              toast.dismiss('payment-toast');
+              if (data.error) {
+                toast.error(`Payment Init Failed: ${data.error}`);
+                router.push('/dashboard');
+                return;
+              }
+              submitPayUForm(data);
+            })
+            .catch(err => {
+              console.error('Payment Error', err);
+              router.push('/dashboard');
+            });
+
+        } else {
+          toast.success('Welcome!');
+          router.push('/dashboard');
+        }
+      }
+
     } catch (error) {
       console.error('Auth Error:', error)
       toast.error('Something went wrong')
@@ -196,282 +266,141 @@ function LoginForm() {
             </Link>
           </div>
 
-          <AnimatePresence mode="wait">
-            {step === 1 ? (
-              <motion.div
-                key="step1"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-              >
-                <div className="mb-10">
-                  <Link
-                    href="/"
-                    className="inline-flex items-center text-sm font-black uppercase tracking-widest text-slate-400 hover:text-primary-600 transition-colors group mb-8"
-                  >
-                    <ArrowLeft className="w-4 h-4 mr-2 group-hover:-translate-x-1 transition-transform" />
-                    Back to Home
-                  </Link>
+          <div className="mb-10">
+            <Link
+              href="/"
+              className="inline-flex items-center text-sm font-black uppercase tracking-widest text-slate-400 hover:text-primary-600 transition-colors group mb-8"
+            >
+              <ArrowLeft className="w-4 h-4 mr-2 group-hover:-translate-x-1 transition-transform" />
+              Back to Home
+            </Link>
 
-                  <div className="relative">
-                    <div className="absolute -left-4 top-0 w-1 h-12 bg-primary-600 rounded-full" />
-                    <h2 className="text-4xl md:text-5xl font-black text-slate-900 mb-3 tracking-tighter leading-tight">
-                      {isLogin ? 'Welcome Back!' : 'Create Account'}
-                    </h2>
-                    <p className="text-slate-500 font-medium text-lg max-w-sm">
-                      {isLogin
-                        ? 'Join thousands of students on their path to success.'
-                        : 'Start your smart learning journey today with EduAiTutors.'}
-                    </p>
-                  </div>
+            <div className="relative">
+              <div className="absolute -left-4 top-0 w-1 h-12 bg-primary-600 rounded-full" />
+              <h2 className="text-4xl md:text-5xl font-black text-slate-900 mb-3 tracking-tighter leading-tight">
+                {isLogin ? 'Welcome Back!' : 'Create Account'}
+              </h2>
+              <p className="text-slate-500 font-medium text-lg max-w-sm">
+                {isLogin
+                  ? 'Join thousands of students on their path to success.'
+                  : 'Start your smart learning journey today with EduAiTutors.'}
+              </p>
+            </div>
 
-                  {!isLogin && packageName && (
-                    <div className="mt-8 relative group">
-                      <div className="absolute inset-0 bg-primary-600/20 blur-2xl rounded-3xl group-hover:bg-primary-600/30 transition-all opacity-50" />
-                      <div className="relative p-6 bg-white border-2 border-primary-100 rounded-[2rem] flex items-center justify-between shadow-xl shadow-primary-600/5 transition-transform hover:scale-[1.02]">
-                        <div className="flex items-center gap-4">
-                          <div className="w-14 h-14 rounded-2xl bg-primary-600/10 flex items-center justify-center text-primary-600">
-                            <CheckCircle className="w-7 h-7" />
-                          </div>
-                          <div>
-                            <p className="text-[10px] text-primary-600 font-black uppercase tracking-[0.3em] mb-1">Selected Plan</p>
-                            <h4 className="text-slate-900 font-black text-xl leading-tight">{packageName}</h4>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-primary-600 font-black text-2xl tracking-tighter">₹{Number(packagePrice).toLocaleString()}</p>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                <form onSubmit={handleNextStep} className="space-y-6">
-                  {!isLogin && (
-                    <div>
-                      <label className="block text-[10px] font-black text-slate-400 mb-3 uppercase tracking-widest">Full Name</label>
-                      <div className="relative group">
-                        <div className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center text-slate-400 group-focus-within:bg-primary-50 group-focus-within:text-primary-600 transition-all">
-                          <User className="w-5 h-5" />
-                        </div>
-                        <input
-                          type="text"
-                          required={!isLogin}
-                          value={name}
-                          onChange={(e) => setName(e.target.value)}
-                          className="w-full pl-16 pr-6 py-5 bg-slate-50/50 border-2 border-transparent rounded-2xl focus:bg-white focus:border-primary-600/20 active:bg-white outline-none transition-all font-bold text-slate-900 text-lg shadow-sm focus:shadow-xl focus:shadow-primary-600/5 placeholder:text-slate-300"
-                          placeholder="Your official name"
-                        />
-                      </div>
-                    </div>
-                  )}
-
-                  <div>
-                    <label className="block text-[10px] font-black text-slate-400 mb-3 uppercase tracking-widest">Email Address</label>
-                    <div className="relative group">
-                      <div className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center text-slate-400 group-focus-within:bg-primary-50 group-focus-within:text-primary-600 transition-all">
-                        <Mail className="w-5 h-5" />
-                      </div>
-                      <input
-                        type="email"
-                        required
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        className="w-full pl-16 pr-6 py-5 bg-slate-50/50 border-2 border-transparent rounded-2xl focus:bg-white focus:border-primary-600/20 active:bg-white outline-none transition-all font-bold text-slate-900 text-lg shadow-sm focus:shadow-xl focus:shadow-primary-600/5 placeholder:text-slate-300"
-                        placeholder="name@example.com"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-[10px] font-black text-slate-400 mb-3 uppercase tracking-widest">Secret Password</label>
-                    <div className="relative group">
-                      <div className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center text-slate-400 group-focus-within:bg-primary-50 group-focus-within:text-primary-600 transition-all">
-                        <Lock className="w-5 h-5" />
-                      </div>
-                      <input
-                        type={showPassword ? 'text' : 'password'}
-                        required
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        className="w-full pl-16 pr-14 py-5 bg-slate-50/50 border-2 border-transparent rounded-2xl focus:bg-white focus:border-primary-600/20 active:bg-white outline-none transition-all font-bold text-slate-900 text-lg shadow-sm focus:shadow-xl focus:shadow-primary-600/5 placeholder:text-slate-300"
-                        placeholder="••••••••"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-4 top-1/2 -translate-y-1/2 p-2 text-slate-300 hover:text-primary-600 transition-colors"
-                      >
-                        {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                      </button>
-                    </div>
-                  </div>
-
-                  <motion.button
-                    whileTap={{ scale: 0.98 }}
-                    disabled={isLoading}
-                    className="w-full py-6 bg-primary-600 text-white rounded-2xl font-black text-xl uppercase tracking-widest shadow-2xl shadow-primary-600/30 hover:bg-primary-700 transition-all active:scale-[0.98] disabled:opacity-70 flex items-center justify-center group relative overflow-hidden"
-                  >
-                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
-                    <span className="relative flex items-center justify-center gap-2">
-                      {isLoading ? (
-                        <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                      ) : (
-                        isLogin ? 'Sign In' : (packageName ? 'Continue to Payment' : 'Create Account')
-                      )}
-                      {!isLogin && packageName && !isLoading && (
-                        <ArrowRight className="w-6 h-6 group-hover:translate-x-2 transition-transform" />
-                      )}
-                    </span>
-                  </motion.button>
-                </form>
-
-                <div className="mt-10 text-center">
-                  <p className="text-slate-500 font-medium">
-                    {isLogin ? "Don't have an account?" : "Already have an account?"}{' '}
-                    <button
-                      onClick={() => setIsLogin(!isLogin)}
-                      className="font-black text-primary-600 hover:text-primary-700 transition-colors uppercase tracking-widest text-xs"
-                    >
-                      {isLogin ? 'Sign up free' : 'Sign in here'}
-                    </button>
-                  </p>
-                </div>
-              </motion.div>
-            ) : (
-              <motion.div
-                key="step2"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-              >
-                <div className="mb-10">
-                  <button
-                    onClick={() => setStep(1)}
-                    className="inline-flex items-center text-sm font-black uppercase tracking-widest text-slate-400 hover:text-primary-600 transition-colors group mb-8"
-                  >
-                    <ArrowLeft className="w-4 h-4 mr-2 group-hover:-translate-x-1 transition-transform" />
-                    Back to Details
-                  </button>
-
-                  <div className="relative">
-                    <div className="absolute -left-4 top-0 w-1 h-12 bg-primary-600 rounded-full" />
-                    <h2 className="text-4xl md:text-5xl font-black text-slate-900 mb-2 tracking-tighter leading-tight">Secure Payment</h2>
-                    <p className="text-slate-500 font-medium text-lg leading-relaxed">Complete your enrollment in {packageName}</p>
-                  </div>
-                </div>
-
-                <div className="bg-slate-900 rounded-[2.5rem] p-8 mb-10 shadow-2xl relative overflow-hidden group">
-                  <div className="absolute top-0 right-0 w-32 h-32 bg-primary-600 opacity-20 blur-3xl -mr-16 -mt-16" />
-                  <h3 className="text-[10px] font-black text-primary-400 uppercase tracking-[0.3em] mb-6">Enrollment Summary</h3>
-                  <div className="space-y-4">
-                    <div className="flex justify-between items-center text-white">
-                      <span className="font-medium text-slate-400">Selected Plan</span>
-                      <span className="font-black text-lg">{packageName}</span>
-                    </div>
-                    <div className="flex justify-between items-center pt-6 border-t border-white/10 group-hover:border-primary-600/30 transition-colors">
-                      <span className="text-slate-400 font-medium text-lg">Total Amount</span>
-                      <span className="text-primary-500 text-3xl font-black tracking-tighter flex items-center gap-1">
-                        <span className="text-base text-primary-600/50">INR</span>
-                        ₹{Number(packagePrice).toLocaleString()}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                <form onSubmit={handleNextStep} className="space-y-6">
-                  <div>
-                    <label className="block text-[10px] font-black text-slate-400 mb-3 uppercase tracking-widest">Card Holder Name</label>
-                    <div className="relative group">
-                      <div className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center text-slate-400 group-focus-within:bg-primary-50 group-focus-within:text-primary-600 transition-all">
-                        <User className="w-5 h-5" />
-                      </div>
-                      <input
-                        type="text"
-                        required
-                        defaultValue={name}
-                        className="w-full pl-16 pr-6 py-5 bg-slate-50/50 border-2 border-transparent rounded-2xl focus:bg-white focus:border-primary-600/20 active:bg-white outline-none transition-all font-bold text-slate-900 text-lg shadow-sm focus:shadow-xl focus:shadow-primary-600/5 placeholder:text-slate-300"
-                        placeholder="Name as on card"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-[10px] font-black text-slate-400 mb-3 uppercase tracking-widest">Card Number</label>
-                    <div className="relative group">
-                      <div className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center text-slate-400 group-focus-within:bg-primary-50 group-focus-within:text-primary-600 transition-all">
-                        <CreditCard className="w-5 h-5" />
-                      </div>
-                      <input
-                        type="text"
-                        required
-                        maxLength={19}
-                        onChange={(e) => {
-                          let v = e.target.value.replace(/\s+/g, '').replace(/[^0-9]/gi, '')
-                          let matches = v.match(/\d{4,16}/g)
-                          let match = matches && matches[0] || ''
-                          let parts = []
-                          for (let i = 0, len = match.length; i < len; i += 4) {
-                            parts.push(match.substring(i, i + 4))
-                          }
-                          if (parts.length) { e.target.value = parts.join(' ') } else { e.target.value = v }
-                        }}
-                        className="w-full pl-16 pr-6 py-5 bg-slate-50/50 border-2 border-transparent rounded-2xl focus:bg-white focus:border-primary-600/20 active:bg-white outline-none transition-all font-bold text-slate-900 text-lg shadow-sm focus:shadow-xl focus:shadow-primary-600/5 placeholder:text-slate-300 tracking-widest"
-                        placeholder="0000 0000 0000 0000"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-6">
-                    <div>
-                      <label className="block text-[10px] font-black text-slate-400 mb-3 uppercase tracking-widest">Expiry Date</label>
-                      <input
-                        type="text"
-                        required
-                        placeholder="MM / YY"
-                        maxLength={5}
-                        className="w-full px-6 py-5 bg-slate-50/50 border-2 border-transparent rounded-2xl focus:bg-white focus:border-primary-600/20 active:bg-white outline-none transition-all font-bold text-slate-900 text-lg shadow-sm focus:shadow-xl focus:shadow-primary-600/5 text-center placeholder:text-slate-300"
-                      />
+            {!isLogin && packageName && (
+              <div className="mt-8 relative group">
+                <div className="absolute inset-0 bg-primary-600/20 blur-2xl rounded-3xl group-hover:bg-primary-600/30 transition-all opacity-50" />
+                <div className="relative p-6 bg-white border-2 border-primary-100 rounded-[2rem] flex items-center justify-between shadow-xl shadow-primary-600/5 transition-transform hover:scale-[1.02]">
+                  <div className="flex items-center gap-4">
+                    <div className="w-14 h-14 rounded-2xl bg-primary-600/10 flex items-center justify-center text-primary-600">
+                      <CheckCircle className="w-7 h-7" />
                     </div>
                     <div>
-                      <label className="block text-[10px] font-black text-slate-400 mb-3 uppercase tracking-widest">CVV Code</label>
-                      <input
-                        type="password"
-                        required
-                        maxLength={3}
-                        placeholder="•••"
-                        className="w-full px-6 py-5 bg-slate-50/50 border-2 border-transparent rounded-2xl focus:bg-white focus:border-primary-600/20 active:bg-white outline-none transition-all font-bold text-slate-900 text-lg shadow-sm focus:shadow-xl focus:shadow-primary-600/5 text-center placeholder:text-slate-300"
-                      />
+                      <p className="text-[10px] text-primary-600 font-black uppercase tracking-[0.3em] mb-1">Selections</p>
+                      <h4 className="text-slate-900 font-black text-xl leading-tight">{packageName}</h4>
                     </div>
                   </div>
-
-                  <motion.button
-                    whileTap={{ scale: 0.98 }}
-                    disabled={isLoading}
-                    className="w-full py-6 bg-slate-900 text-white rounded-2xl font-black text-xl uppercase tracking-widest shadow-2xl shadow-slate-900/40 hover:bg-slate-800 transition-all active:scale-[0.98] disabled:opacity-70 flex items-center justify-center group relative overflow-hidden mt-4"
-                  >
-                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
-                    <span className="relative flex items-center justify-center gap-3">
-                      {isLoading ? (
-                        <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                      ) : (
-                        `Pay ₹${Number(packagePrice).toLocaleString()} & Register`
-                      )}
-                      {!isLoading && <ArrowRight className="w-6 h-6 group-hover:translate-x-2 transition-transform" />}
-                    </span>
-                  </motion.button>
-
-                  <div className="flex items-center justify-center gap-4 pt-4">
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5 bg-slate-50 px-4 py-2 rounded-full">
-                      <ShieldCheck className="w-3.5 h-3.5 text-primary-600" /> SSL Secured
-                    </p>
-                    <div className="h-1 w-1 bg-slate-200 rounded-full" />
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Encrypted Pay</p>
+                  <div className="text-right">
+                    <p className="text-primary-600 font-black text-2xl tracking-tighter">₹{Number(packagePrice).toLocaleString()}</p>
                   </div>
-                </form>
-              </motion.div>
+                </div>
+              </div>
             )}
-          </AnimatePresence>
+          </div>
+
+          <form onSubmit={(e) => { e.preventDefault(); handleAuth(); }}>
+            <div className="space-y-6">
+              {!isLogin && (
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 mb-3 uppercase tracking-widest">Full Name</label>
+                  <div className="relative group">
+                    <div className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center text-slate-400 group-focus-within:bg-primary-50 group-focus-within:text-primary-600 transition-all">
+                      <User className="w-5 h-5" />
+                    </div>
+                    <input
+                      type="text"
+                      required={!isLogin}
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      className="w-full pl-16 pr-6 py-5 bg-slate-50/50 border-2 border-transparent rounded-2xl focus:bg-white focus:border-primary-600/20 active:bg-white outline-none transition-all font-bold text-slate-900 text-lg shadow-sm focus:shadow-xl focus:shadow-primary-600/5 placeholder:text-slate-300"
+                      placeholder="Your official name"
+                    />
+                  </div>
+                </div>
+              )}
+
+              <div>
+                <label className="block text-[10px] font-black text-slate-400 mb-3 uppercase tracking-widest">Email Address</label>
+                <div className="relative group">
+                  <div className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center text-slate-400 group-focus-within:bg-primary-50 group-focus-within:text-primary-600 transition-all">
+                    <Mail className="w-5 h-5" />
+                  </div>
+                  <input
+                    type="email"
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="w-full pl-16 pr-6 py-5 bg-slate-50/50 border-2 border-transparent rounded-2xl focus:bg-white focus:border-primary-600/20 active:bg-white outline-none transition-all font-bold text-slate-900 text-lg shadow-sm focus:shadow-xl focus:shadow-primary-600/5 placeholder:text-slate-300"
+                    placeholder="name@example.com"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-black text-slate-400 mb-3 uppercase tracking-widest">Secret Password</label>
+                <div className="relative group">
+                  <div className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center text-slate-400 group-focus-within:bg-primary-50 group-focus-within:text-primary-600 transition-all">
+                    <Lock className="w-5 h-5" />
+                  </div>
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    required
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="w-full pl-16 pr-14 py-5 bg-slate-50/50 border-2 border-transparent rounded-2xl focus:bg-white focus:border-primary-600/20 active:bg-white outline-none transition-all font-bold text-slate-900 text-lg shadow-sm focus:shadow-xl focus:shadow-primary-600/5 placeholder:text-slate-300"
+                    placeholder="••••••••"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 p-2 text-slate-300 hover:text-primary-600 transition-colors"
+                  >
+                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  </button>
+                </div>
+              </div>
+
+              <motion.button
+                whileTap={{ scale: 0.98 }}
+                disabled={isLoading}
+                className="w-full py-6 bg-primary-600 text-white rounded-2xl font-black text-xl uppercase tracking-widest shadow-2xl shadow-primary-600/30 hover:bg-primary-700 transition-all active:scale-[0.98] disabled:opacity-70 flex items-center justify-center group relative overflow-hidden"
+              >
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
+                <span className="relative flex items-center justify-center gap-2">
+                  {isLoading ? (
+                    <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  ) : (
+                    isLogin ? 'Sign In' : (packageName && packagePrice ? 'Pay & Register' : 'Create Account')
+                  )}
+                  {!isLogin && packageName && !isLoading && (
+                    <ArrowRight className="w-6 h-6 group-hover:translate-x-2 transition-transform" />
+                  )}
+                </span>
+              </motion.button>
+            </div>
+          </form>
+
+          <div className="mt-10 text-center">
+            <p className="text-slate-500 font-medium">
+              {isLogin ? "Don't have an account?" : "Already have an account?"}{' '}
+              <button
+                onClick={() => setIsLogin(!isLogin)}
+                className="font-black text-primary-600 hover:text-primary-700 transition-colors uppercase tracking-widest text-xs"
+              >
+                {isLogin ? 'Sign up free' : 'Sign in here'}
+              </button>
+            </p>
+          </div>
         </motion.div>
       </div>
     </div>
