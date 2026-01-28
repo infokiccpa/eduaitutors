@@ -361,7 +361,7 @@ export default function PackagesSection({ variant = 'full', onLinkClick, onlySub
                     alt={pkg.title}
                     className="absolute inset-0 w-full h-full object-cover transition-transform duration-[1.5s] group-hover:scale-105"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-white" />
+
 
                   {user?.package === pkg.title && (
                     <div className="absolute top-6 left-6 z-30">
