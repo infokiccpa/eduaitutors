@@ -18,7 +18,7 @@ export default function PublicFooter() {
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/70 to-black/60" />
       </div>
 
-      <div className="max-w-[1440px] mx-auto px-6 md:px-12 lg:px-20 py-16 relative z-10">
+      <div className="max-w-[90rem] mx-auto px-6 md:px-12 lg:px-20 py-16 relative z-10">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 mb-16">
           {/* Brand Section */}
           <div className="space-y-6">

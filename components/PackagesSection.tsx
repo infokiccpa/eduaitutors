@@ -116,21 +116,22 @@ const CompetitiveCard = ({ pkg, user }: any) => {
           </div>
           <h3 className="text-2xl font-black text-white uppercase tracking-tighter mb-2 group-hover/ecard:text-primary-400 transition-colors">{pkg.title}</h3>
           <div className="flex flex-col items-center gap-1 mb-6">
-            <span className="text-primary-500 font-black text-2xl tracking-tight">₹{pkg.price.toLocaleString()}</span>
+            <span className="text-primary-500 font-black text-2xl tracking-tight uppercase">Coming Soon</span>
             <span className="text-slate-500 text-[8px] font-black uppercase tracking-widest px-3 py-1 bg-white/5 rounded-full">Elite Engineering</span>
           </div>
 
           <button
+            disabled={true} // Set to false to enable once packages are live
             onClick={() => {
               if (user) {
                 const updatedUser = { ...user, package: pkg.title, price: pkg.price }
                 localStorage.setItem('currentUser', JSON.stringify(updatedUser))
-                window.location.reload() // Reload to update all components
+                window.location.reload()
               } else {
                 router.push(`/login?mode=signup&package=${encodeURIComponent(pkg.title)}&price=${pkg.price}`)
               }
             }}
-            className="w-full py-4 bg-white text-slate-900 rounded-[2rem] flex items-center justify-center gap-2 font-black text-[10px] uppercase tracking-widest hover:bg-primary-600 hover:text-white transition-all shadow-xl active:scale-95"
+            className="w-full py-4 bg-slate-200 text-slate-400 cursor-not-allowed rounded-[2rem] flex items-center justify-center gap-2 font-black text-[10px] uppercase tracking-widest transition-all"
           >
             Access Now <ArrowRight className="w-4 h-4" />
           </button>
@@ -259,7 +260,7 @@ export default function PackagesSection({ variant = 'full', onLinkClick, onlySub
             <motion.div
               key={idx}
               whileHover={{ y: -10 }}
-              className={`flex-shrink-0 w-72 h-[450px] bg-primary-50 rounded-[2.5rem] overflow-hidden shadow-xl border-2 transition-all duration-500 cursor-pointer relative snap-start group ${user?.package === pkg.title ? 'border-primary-600' : 'border-gray-100'}`}
+              className={`flex-shrink-0 w-72 h-[28.1rem] bg-primary-50 rounded-[2.5rem] overflow-hidden shadow-xl border-2 transition-all duration-500 cursor-pointer relative snap-start group ${user?.package === pkg.title ? 'border-primary-600' : 'border-gray-100'}`}
               onClick={() => {
                 if (user?.package !== pkg.title) handleEnrollClick(pkg)
               }}
@@ -281,7 +282,7 @@ export default function PackagesSection({ variant = 'full', onLinkClick, onlySub
                 <p className="text-white/70 text-sm line-clamp-3 mb-4 leading-relaxed">{pkg.subtitle}</p>
 
                 <div className="flex items-center justify-between mt-auto pt-4 border-t border-white/10">
-                  <span className="text-white font-bold">₹{pkg.price.toLocaleString()}</span>
+                  <span className="text-white font-black text-xs uppercase tracking-widest bg-primary-600/30 px-3 py-1 rounded-full">Coming Soon</span>
                   {user?.package === pkg.title && (
                     <span className="text-[10px] font-black uppercase text-primary-400">Your Plan</span>
                   )}
@@ -315,7 +316,7 @@ export default function PackagesSection({ variant = 'full', onLinkClick, onlySub
       <div className="absolute top-0 right-0 w-1/3 h-1/3 bg-primary-50 rounded-full blur-[120px] -mr-32 -mt-32 opacity-50" />
       <div className="absolute bottom-0 left-0 w-1/4 h-1/4 bg-blue-50 rounded-full blur-[100px] -ml-24 -mb-24 opacity-50" />
 
-      <div className="max-w-[1440px] mx-auto relative z-10 px-6 md:px-12 lg:px-20">
+      <div className="max-w-[90rem] mx-auto relative z-10 px-6 md:px-12 lg:px-20">
         {!onlySubscribed && !hideHeader && (
           <div className="mb-20">
             <motion.div
@@ -353,7 +354,7 @@ export default function PackagesSection({ variant = 'full', onLinkClick, onlySub
                 if (user?.package !== pkg.title) handleEnrollClick(pkg)
               }}
             >
-              <div className={`relative h-[540px] rounded-[3rem] overflow-hidden transition-all duration-500 bg-white border border-slate-100 shadow-xl flex flex-col ${user?.package === pkg.title ? 'ring-2 ring-primary-600' : 'group-hover:border-primary-200 group-hover:shadow-primary-600/10'}`}>
+              <div className={`relative h-[33.75rem] rounded-[3rem] overflow-hidden transition-all duration-500 bg-white border border-slate-100 shadow-xl flex flex-col ${user?.package === pkg.title ? 'ring-2 ring-primary-600' : 'group-hover:border-primary-200 group-hover:shadow-primary-600/10'}`}>
 
                 <div className="h-[42%] relative overflow-hidden">
                   <motion.img
@@ -389,10 +390,9 @@ export default function PackagesSection({ variant = 'full', onLinkClick, onlySub
 
                   <div className="flex items-center justify-between pt-6 border-t border-slate-50 mt-auto">
                     <div>
-                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1 leading-none">Subscription</p>
+                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1 leading-none">Status</p>
                       <div className="flex items-baseline gap-1">
-                        <span className="text-3xl font-black text-slate-900">₹{pkg.price.toLocaleString()}</span>
-                        <span className="text-slate-400 text-[10px] font-bold uppercase">/Yr</span>
+                        <span className="text-xl font-black text-primary-600 uppercase tracking-tight">Coming Soon</span>
                       </div>
                     </div>
 
@@ -401,7 +401,10 @@ export default function PackagesSection({ variant = 'full', onLinkClick, onlySub
                         <CheckCircle2 className="w-5 h-5" />
                       </div>
                     ) : (
-                      <button className="flex items-center gap-2 px-6 py-3 bg-slate-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-primary-600 transition-all active:scale-95">
+                      <button
+                        disabled={true} // Set to false to enable once packages are live
+                        className="flex items-center gap-2 px-6 py-3 bg-slate-100 text-slate-400 cursor-not-allowed rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all"
+                      >
                         Details <ArrowRight className="w-3 h-3" />
                       </button>
                     )}

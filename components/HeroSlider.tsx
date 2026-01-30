@@ -53,7 +53,7 @@ export default function HeroSlider({ children }: HeroSliderProps) {
             </div>
 
             {/* Content Container */}
-            <div className="relative z-10 w-full max-w-[1440px] mx-auto px-6 md:px-12 lg:px-20 pt-20">
+            <div className="relative z-10 w-full max-w-[90rem] mx-auto px-6 md:px-12 lg:px-20 pt-20">
                 <motion.div
                     initial={{ opacity: 0, y: 40 }}
                     animate={{ opacity: 1, y: 0 }}

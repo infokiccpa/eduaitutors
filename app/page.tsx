@@ -13,6 +13,7 @@ import AIPreviewSection from '@/components/AIPreviewSection'
 import AboutSection from '@/components/AboutSection'
 import FeaturesSection from '@/components/FeaturesSection'
 import LeadCaptureForm from '@/components/LeadCaptureForm'
+import LiveClassStrip from '@/components/LiveClassStrip'
 import { ArrowRight, Sparkles, User, ShieldCheck } from 'lucide-react'
 import { motion } from 'framer-motion'
 
@@ -58,6 +59,9 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-gray-50">
       <PublicHeader />
+
+      {/* Live Class Strip Banner */}
+      <LiveClassStrip />
 
       {/* Hero Section */}
       <HeroSlider>
