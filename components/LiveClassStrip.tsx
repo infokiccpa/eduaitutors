@@ -43,7 +43,7 @@ const LiveClassStrip = () => {
                     {/* Highlight Line */}
                     <div className="inline-block px-6 py-3 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl mb-8">
                         <p className="text-xl md:text-3xl font-black text-orange-400">
-                            FREE LIVE Classes for Multiple Grades
+                            FREE LIVE Classes
                         </p>
                     </div>
 

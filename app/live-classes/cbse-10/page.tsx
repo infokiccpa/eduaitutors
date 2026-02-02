@@ -187,15 +187,15 @@ const CBSERevisionPage = () => {
     const [selectedSubjects, setSelectedSubjects] = useState<string[]>([])
 
     const grade10Classes = [
-        { grade: 'Grade 10', subject: 'MATHS', date: '14-15 FEBRUARY', time: '10 AM - 1 PM', startDate: '2026-02-14T10:00:00', color: 'bg-blue-600', image: '/grade_10_maths_bg.png' },
-        { grade: 'Grade 10', subject: 'ENGLISH', date: '21-22 FEBRUARY', time: '10 AM - 1 PM', startDate: '2026-02-21T10:00:00', color: 'bg-emerald-600', image: '/english_bg.png' }
+        { grade: 'Grade 10', subject: 'MATHEMATICS', date: '15 FEBRUARY', time: '8 AM - 3 PM', startDate: '2026-02-15T08:00:00', color: 'bg-blue-600', image: '/grade_10_maths_bg.png' },
+        { grade: 'Grade 10', subject: 'SCIENCE', date: '22 FEBRUARY', time: '8 AM - 3 PM', startDate: '2026-02-22T08:00:00', color: 'bg-emerald-600', image: '/science_10_bg.png' }
     ]
 
     const grade12Classes = [
-        { grade: 'Grade 12', subject: 'PHYSICS', date: '13-14 FEBRUARY', time: '4 PM - 8 PM & 8 AM - 1 PM', startDate: '2026-02-13T16:00:00', color: 'bg-pink-600', image: '/physics_bg.png' },
-        { grade: 'Grade 12', subject: 'PHYSICS', date: '21-22 FEBRUARY', time: '4 PM - 8 PM & 8 AM - 1 PM', startDate: '2026-02-21T16:00:00', color: 'bg-pink-600', image: '/physics_bg.png' },
-        { grade: 'Grade 12', subject: 'CHEMISTRY', date: '28 FEB - 1 MAR', time: '4 PM - 8 PM & 8 AM - 1 PM', startDate: '2026-02-28T16:00:00', color: 'bg-purple-600', image: '/chemistry_bg.png' },
-        { grade: 'Grade 12', subject: 'CHEMISTRY', date: '21-22 MARCH', time: '4 PM - 8 PM & 8 AM - 1 PM', startDate: '2026-03-21T16:00:00', color: 'bg-teal-600', image: '/chemistry_bg.png' }
+        { grade: 'Grade 12', subject: 'PHYSICS', date: '13-14 FEB', time: '4 PM - 8 PM & 8 AM - 1 PM', startDate: '2026-02-13T16:00:00', color: 'bg-pink-600', image: '/physics_bg.png' },
+        { grade: 'Grade 12', subject: 'BIOLOGY', date: '21-22 FEB', time: '4 PM - 8 PM & 8 AM - 1 PM', startDate: '2026-02-21T16:00:00', color: 'bg-emerald-600', image: '/biology_bg.png' },
+        { grade: 'Grade 12', subject: 'MATHEMATICS', date: '28 FEB - 1 MAR', time: '4 PM - 8 PM & 8 AM - 1 PM', startDate: '2026-02-28T16:00:00', color: 'bg-purple-600', image: '/maths_12_bg.png' },
+        { grade: 'Grade 12', subject: 'CHEMISTRY', date: '21-24 FEB', time: '4 PM - 8 PM & 8 AM - 1 PM', startDate: '2026-02-21T16:00:00', color: 'bg-teal-600', image: '/science_bg.png' }
     ]
 
     const handleClassSelect = (grade: 'Grade 10' | 'Grade 12') => {
@@ -383,7 +383,7 @@ const CBSERevisionPage = () => {
                             </h1>
 
                             <p className="text-xl text-slate-300 mb-10 leading-relaxed font-medium max-w-xl">
-                                Join the ultimate <strong>Free Revision Series</strong>. Master Math, English, Physics & Chemistry with India's best educators before it's too late.
+                                Join the ultimate <strong>Free Revision Series</strong>. Master Maths, Science, Physics & Chemistry with India's best educators before it's too late.
                             </p>
 
                             {/* Hero Countdown - Automatically shows next upcoming class */}
@@ -509,7 +509,7 @@ const CBSERevisionPage = () => {
                                             <img
                                                 src={cls.image}
                                                 alt={cls.subject}
-                                                className="absolute inset-0 w-full h-full object-cover scale-125 transition-transform duration-700 group-hover:scale-135"
+                                                className="absolute inset-0 w-full h-full object-cover transition-all duration-700 group-hover:scale-110"
                                             />
                                         ) : (
                                             <div className={`w-full h-full ${cls.color} flex items-center justify-center`}>
@@ -593,7 +593,7 @@ const CBSERevisionPage = () => {
                                             <img
                                                 src={cls.image}
                                                 alt={cls.subject}
-                                                className="absolute inset-0 w-full h-full object-cover scale-125 transition-transform duration-700 group-hover:scale-135"
+                                                className="absolute inset-0 w-full h-full object-cover transition-all duration-700 group-hover:scale-110"
                                             />
                                         ) : (
                                             <div className={`w-full h-full ${cls.color} flex items-center justify-center`}>
