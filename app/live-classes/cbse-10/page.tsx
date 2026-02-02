@@ -25,6 +25,154 @@ import {
 import { toast } from 'react-toastify'
 import Script from 'next/script'
 
+const CourseTimer = ({ targetDate }: { targetDate: string }) => {
+    const [timeLeft, setTimeLeft] = useState<{ d: number, h: number, m: number, s: number } | null>(null);
+    const [status, setStatus] = useState<'UPCOMING' | 'LIVE' | 'ENDED'>('UPCOMING');
+
+    React.useEffect(() => {
+        const target = new Date(targetDate).getTime();
+        const end = target + (3 * 60 * 60 * 1000); // Assume 3 hours duration for "LIVE" status check
+
+        const calculateTime = () => {
+            const now = new Date().getTime();
+            const diff = target - now;
+
+            if (diff > 0) {
+                setStatus('UPCOMING');
+                setTimeLeft({
+                    d: Math.floor(diff / (1000 * 60 * 60 * 24)),
+                    h: Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
+                    m: Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60)),
+                    s: Math.floor((diff % (1000 * 60)) / 1000),
+                });
+            } else if (now < end) {
+                setStatus('LIVE');
+                setTimeLeft(null);
+            } else {
+                setStatus('ENDED');
+                setTimeLeft(null);
+            }
+        };
+
+        calculateTime();
+        const timer = setInterval(calculateTime, 1000);
+        return () => clearInterval(timer);
+    }, [targetDate]);
+
+    if (status === 'ENDED') return (
+        <div className="py-4">
+            <span className="inline-flex items-center px-4 py-1.5 rounded-full bg-slate-100 text-slate-500 font-bold text-xs uppercase tracking-wider border border-slate-200">
+                Class Ended
+            </span>
+        </div>
+    );
+
+    if (status === 'LIVE') return (
+        <div className="py-4">
+            <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-red-50 text-red-600 font-bold text-xs uppercase tracking-wider border border-red-100 animate-pulse">
+                <span className="w-2 h-2 rounded-full bg-red-600 animate-ping"></span>
+                Live Now
+            </span>
+        </div>
+    );
+
+    if (!timeLeft) return null;
+
+    return (
+        <div className="flex justify-center items-end gap-1.5 py-1">
+            {[
+                { label: 'D', val: timeLeft.d },
+                { label: 'H', val: timeLeft.h },
+                { label: 'M', val: timeLeft.m },
+                { label: 'S', val: timeLeft.s }
+            ].map((item, i) => (
+                <div key={i} className="flex flex-col items-center">
+                    <div className="relative group">
+                        <div className="w-8 h-8 bg-slate-100 text-slate-900 rounded-md flex items-center justify-center font-black text-xs border border-slate-200">
+                            {item.val < 10 ? `0${item.val}` : item.val}
+                        </div>
+                    </div>
+                    <span className="text-[7px] font-bold text-slate-400 mt-1 tracking-widest">{item.label}</span>
+                </div>
+            ))}
+        </div>
+    );
+};
+
+const HeroCountdown = ({ classes }: { classes: any[] }) => {
+    const [timeLeft, setTimeLeft] = useState<{ d: number, h: number, m: number, s: number } | null>(null);
+    const [targetClass, setTargetClass] = useState<any>(null);
+
+    React.useEffect(() => {
+        const findNextClass = () => {
+            const now = new Date().getTime();
+            // Filter and sort classes to find the nearest upcoming one
+            const upcoming = classes
+                .map(c => ({ ...c, startTime: new Date(c.startDate).getTime() }))
+                .filter(c => c.startTime > now)
+                .sort((a, b) => a.startTime - b.startTime)[0];
+
+            setTargetClass(upcoming);
+        };
+
+        findNextClass();
+        const interval = setInterval(findNextClass, 60000); // Check every minute for next class updates
+        return () => clearInterval(interval);
+    }, [classes]);
+
+    React.useEffect(() => {
+        if (!targetClass) return;
+
+        const calculateTime = () => {
+            const now = new Date().getTime();
+            const diff = targetClass.startTime - now;
+
+            if (diff > 0) {
+                setTimeLeft({
+                    d: Math.floor(diff / (1000 * 60 * 60 * 24)),
+                    h: Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
+                    m: Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60)),
+                    s: Math.floor((diff % (1000 * 60)) / 1000),
+                });
+            } else {
+                setTimeLeft(null);
+            }
+        };
+
+        calculateTime();
+        const timer = setInterval(calculateTime, 1000);
+        return () => clearInterval(timer);
+    }, [targetClass]);
+
+    if (!timeLeft || !targetClass) return null;
+
+    return (
+        <div className="mb-10">
+            <div className="flex items-center gap-2 mb-4">
+                <div className="w-2 h-2 rounded-full bg-orange-500 animate-pulse" />
+                <p className="text-orange-300 font-bold text-sm tracking-wider uppercase">
+                    Next Live Class: <span className="text-white">{targetClass.subject} ({targetClass.grade === 'Grade 10' ? '10th' : '12th'})</span>
+                </p>
+            </div>
+            <div className="flex gap-4">
+                {[
+                    { label: 'DAYS', val: timeLeft.d },
+                    { label: 'HOURS', val: timeLeft.h },
+                    { label: 'MINUTES', val: timeLeft.m },
+                    { label: 'SECONDS', val: timeLeft.s }
+                ].map((item, i) => (
+                    <div key={i} className="flex flex-col items-center">
+                        <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl w-16 h-16 sm:w-20 sm:h-20 flex items-center justify-center text-2xl sm:text-4xl font-black text-white shadow-xl">
+                            {item.val < 10 ? `0${item.val}` : item.val}
+                        </div>
+                        <span className="text-[10px] sm:text-xs text-orange-200/80 font-bold uppercase tracking-widest mt-2">{item.label}</span>
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+};
+
 const CBSERevisionPage = () => {
     const [formData, setFormData] = useState({
         fullName: '',
@@ -39,15 +187,15 @@ const CBSERevisionPage = () => {
     const [selectedSubjects, setSelectedSubjects] = useState<string[]>([])
 
     const grade10Classes = [
-        { subject: 'MATH', date: '15 FEBRUARY', time: '8 AM - 3 PM', color: 'bg-blue-600' },
-        { subject: 'SCIENCE', date: '22 FEBRUARY', time: '8 AM - 3 PM', color: 'bg-emerald-600' }
+        { grade: 'Grade 10', subject: 'MATHS', date: '14-15 FEBRUARY', time: '10 AM - 1 PM', startDate: '2026-02-14T10:00:00', color: 'bg-blue-600', image: '/grade_10_maths_bg.png' },
+        { grade: 'Grade 10', subject: 'ENGLISH', date: '21-22 FEBRUARY', time: '10 AM - 1 PM', startDate: '2026-02-21T10:00:00', color: 'bg-emerald-600', image: '/english_bg.png' }
     ]
 
     const grade12Classes = [
-        { subject: 'MATHEMATICS', date: '28 FEB - 1 MAR', time: '4 PM - 8 PM & 8 AM - 1 PM', color: 'bg-orange-600' },
-        { subject: 'PHYSICS', date: '13-14 FEB', time: '4 PM - 8 PM & 8 AM - 7 PM', color: 'bg-pink-600' },
-        { subject: 'CHEMISTRY', date: '21-24 FEB', time: '4 PM - 8 PM & 8 AM - 1 PM', color: 'bg-purple-600' },
-        { subject: 'BIOLOGY', date: '21-22 MAR', time: '4 PM - 8 PM & 8 AM - 1 PM', color: 'bg-teal-600' }
+        { grade: 'Grade 12', subject: 'PHYSICS', date: '13-14 FEBRUARY', time: '4 PM - 8 PM & 8 AM - 1 PM', startDate: '2026-02-13T16:00:00', color: 'bg-pink-600', image: '/physics_bg.png' },
+        { grade: 'Grade 12', subject: 'PHYSICS', date: '21-22 FEBRUARY', time: '4 PM - 8 PM & 8 AM - 1 PM', startDate: '2026-02-21T16:00:00', color: 'bg-pink-600', image: '/physics_bg.png' },
+        { grade: 'Grade 12', subject: 'CHEMISTRY', date: '28 FEB - 1 MAR', time: '4 PM - 8 PM & 8 AM - 1 PM', startDate: '2026-02-28T16:00:00', color: 'bg-purple-600', image: '/chemistry_bg.png' },
+        { grade: 'Grade 12', subject: 'CHEMISTRY', date: '21-22 MARCH', time: '4 PM - 8 PM & 8 AM - 1 PM', startDate: '2026-03-21T16:00:00', color: 'bg-teal-600', image: '/chemistry_bg.png' }
     ]
 
     const handleClassSelect = (grade: 'Grade 10' | 'Grade 12') => {
@@ -235,8 +383,11 @@ const CBSERevisionPage = () => {
                             </h1>
 
                             <p className="text-xl text-slate-300 mb-10 leading-relaxed font-medium max-w-xl">
-                                Join the ultimate <strong>Free Revision Series</strong>. Master Math & Science with India's best educators before it's too late.
+                                Join the ultimate <strong>Free Revision Series</strong>. Master Math, English, Physics & Chemistry with India's best educators before it's too late.
                             </p>
+
+                            {/* Hero Countdown - Automatically shows next upcoming class */}
+                            <HeroCountdown classes={[...grade10Classes, ...grade12Classes]} />
 
                             <div className="flex flex-col sm:flex-row gap-5">
                                 <button
@@ -318,47 +469,97 @@ const CBSERevisionPage = () => {
 
 
             {/* Class Cards Section */}
-            <section className="py-16 bg-white">
+            {/* Class Cards Section */}
+            <section className="py-20 bg-white">
                 <div className="max-w-7xl mx-auto px-6 md:px-12">
-                    <div className="text-center mb-12">
-                        <h2 className="text-3xl md:text-4xl font-black text-slate-900 mb-3">Choose Your Class</h2>
-                        <p className="text-slate-600 font-medium">Select your grade to view schedule & register</p>
+                    <div className="text-center mb-16 relative">
+                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-48 bg-blue-500/10 blur-[100px] rounded-full pointer-events-none" />
+                        <h2 className="text-5xl font-black mb-4 tracking-tight relative z-10 text-slate-900">
+                            Choose Your <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">Class</span>
+                        </h2>
+                        <p className="text-lg text-slate-500 font-medium max-w-2xl mx-auto relative z-10">
+                            Select your grade to view schedule & register
+                        </p>
                     </div>
 
                     {/* Grade 10 Section */}
                     <div className="mb-16">
-                        <div className="flex items-center gap-4 mb-8">
-                            <div className="h-px flex-1 bg-slate-200"></div>
-                            <h3 className="text-2xl font-black text-slate-800 uppercase tracking-wider bg-slate-100 px-6 py-2 rounded-full">Grade 10</h3>
-                            <div className="h-px flex-1 bg-slate-200"></div>
+                        <div className="relative flex items-center justify-center py-10">
+                            <div className="absolute inset-0 flex items-center">
+                                <div className="w-full border-t border-slate-200"></div>
+                            </div>
+                            <div className="relative z-10 bg-white px-6">
+                                <span className="inline-flex items-center gap-2 px-8 py-2.5 rounded-full border border-blue-100 bg-blue-50 text-blue-700 font-black tracking-widest uppercase shadow-sm text-lg">
+                                    <span className="w-2.5 h-2.5 rounded-full bg-blue-600 animate-pulse" />
+                                    Grade 10
+                                </span>
+                            </div>
                         </div>
-                        <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+                        <div className="flex flex-wrap justify-center gap-6">
+                            {/* @ts-ignore */}
                             {grade10Classes.map((cls, idx) => (
                                 <motion.div
                                     key={idx}
                                     whileHover={{ y: -5 }}
-                                    className="bg-white rounded-3xl border-2 border-slate-100 overflow-hidden hover:border-blue-200 hover:shadow-2xl transition-all group"
+                                    className="bg-white rounded-xl shadow-xl overflow-hidden transition-all duration-300 w-full max-w-[240px] group flex flex-col"
                                 >
-                                    <div className="p-8 text-center space-y-4">
-                                        <div className="inline-block px-4 py-1.5 bg-blue-50 text-blue-600 rounded-lg font-bold text-sm tracking-wide mb-2">
-                                            GRADE 10
+                                    {/* Card Image Header */}
+                                    <div className="relative h-36 w-full overflow-hidden bg-slate-900">
+                                        {cls.image ? (
+                                            <img
+                                                src={cls.image}
+                                                alt={cls.subject}
+                                                className="absolute inset-0 w-full h-full object-cover scale-125 transition-transform duration-700 group-hover:scale-135"
+                                            />
+                                        ) : (
+                                            <div className={`w-full h-full ${cls.color} flex items-center justify-center`}>
+                                                <span className="text-white font-black text-2xl opacity-20">{cls.subject.substring(0, 3)}</span>
+                                            </div>
+                                        )}
+                                        <div className="absolute top-3 right-3">
+                                            <div className="bg-white/90 backdrop-blur-sm p-1.5 rounded-full shadow-sm">
+                                                <TrendingUp className="w-3 h-3 text-blue-600" />
+                                            </div>
                                         </div>
-                                        <div className="space-y-1">
-                                            <p className="text-slate-500 font-bold uppercase tracking-wider text-sm">{cls.date}</p>
-                                            <p className="text-slate-900 font-bold">{cls.time}</p>
+                                    </div>
+
+                                    {/* Card Body */}
+                                    <div className="p-3 flex flex-col gap-2 flex-1">
+                                        {/* Tags */}
+                                        <div className="flex gap-1.5">
+                                            <span className="px-2 py-0.5 bg-blue-50 text-blue-600 rounded-full text-[9px] font-bold uppercase tracking-wide border border-blue-100">
+                                                Grade 10
+                                            </span>
+                                            <span className="px-2 py-0.5 bg-slate-50 text-slate-500 rounded-full text-[9px] font-bold uppercase tracking-wide border border-slate-100">
+                                                Revision
+                                            </span>
                                         </div>
 
-                                        <h3 className="text-4xl font-black text-blue-600 py-2">{cls.subject}</h3>
+                                        {/* Title & Price */}
+                                        <div className="flex justify-between items-start">
+                                            <div>
+                                                <h3 className="text-xl font-black text-slate-900 leading-tight">{cls.subject}</h3>
+                                                <p className="text-[10px] font-bold text-slate-500 mt-0.5">{cls.date}</p>
+                                            </div>
+                                            <span className="text-emerald-500 font-black text-base">FREE</span>
+                                        </div>
 
-                                        <div className="py-2">
-                                            <span className="text-slate-400 font-bold tracking-[0.2em] text-sm uppercase">FREE</span>
+                                        {/* Description */}
+                                        <p className="text-[10px] text-slate-600 font-medium leading-relaxed">
+                                            Live on <span className="text-slate-900 font-bold">{cls.time}</span>. Covers key concepts.
+                                        </p>
+
+                                        {/* Timer Section */}
+                                        <div className="mt-auto pt-2 border-t border-slate-100">
+                                            <p className="text-[8px] uppercase font-black text-slate-400 mb-1.5 tracking-wider text-center">Class Starts In</p>
+                                            <CourseTimer targetDate={cls.startDate} />
                                         </div>
 
                                         <button
                                             onClick={() => handleClassSelect('Grade 10')}
-                                            className="w-full py-3 rounded-xl border-2 border-blue-600 text-blue-600 font-black uppercase tracking-wider hover:bg-blue-600 hover:text-white transition-all"
+                                            className="w-full py-2 bg-slate-900 text-white rounded-lg font-bold uppercase text-[9px] tracking-wider hover:bg-slate-800 transition-all shadow-lg shadow-slate-200 hover:shadow-xl flex items-center justify-center gap-2"
                                         >
-                                            Register
+                                            Register Now
                                         </button>
                                     </div>
                                 </motion.div>
@@ -368,41 +569,81 @@ const CBSERevisionPage = () => {
 
                     {/* Grade 12 Section */}
                     <div>
-                        <div className="flex items-center gap-4 mb-8">
-                            <div className="h-px flex-1 bg-slate-200"></div>
-                            <h3 className="text-2xl font-black text-slate-800 uppercase tracking-wider bg-slate-100 px-6 py-2 rounded-full">Grade 12</h3>
-                            <div className="h-px flex-1 bg-slate-200"></div>
+                        <div className="relative flex items-center justify-center py-10">
+                            <div className="absolute inset-0 flex items-center">
+                                <div className="w-full border-t border-slate-200"></div>
+                            </div>
+                            <div className="relative z-10 bg-white px-6">
+                                <span className="inline-flex items-center gap-2 px-8 py-2.5 rounded-full border border-orange-100 bg-orange-50 text-orange-700 font-black tracking-widest uppercase shadow-sm text-lg">
+                                    <span className="w-2.5 h-2.5 rounded-full bg-orange-600 animate-pulse" />
+                                    Grade 12
+                                </span>
+                            </div>
                         </div>
-                        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+                        <div className="flex flex-wrap justify-center gap-6">
                             {grade12Classes.map((cls, idx) => (
                                 <motion.div
                                     key={idx}
                                     whileHover={{ y: -5 }}
-                                    className="bg-white rounded-3xl border-2 border-slate-100 overflow-hidden hover:border-orange-200 hover:shadow-2xl transition-all group"
+                                    className="bg-white rounded-xl shadow-xl overflow-hidden transition-all duration-300 w-full max-w-[240px] group flex flex-col"
                                 >
-                                    <div className="p-6 text-center space-y-4">
-                                        <div className="inline-block px-4 py-1.5 bg-orange-50 text-orange-600 rounded-lg font-bold text-xs tracking-wide mb-2">
-                                            GRADE 12
+                                    {/* Card Image Header */}
+                                    <div className="relative h-36 w-full overflow-hidden bg-slate-900">
+                                        {cls.image ? (
+                                            <img
+                                                src={cls.image}
+                                                alt={cls.subject}
+                                                className="absolute inset-0 w-full h-full object-cover scale-125 transition-transform duration-700 group-hover:scale-135"
+                                            />
+                                        ) : (
+                                            <div className={`w-full h-full ${cls.color} flex items-center justify-center`}>
+                                                <span className="text-white font-black text-2xl opacity-20">{cls.subject.substring(0, 3)}</span>
+                                            </div>
+                                        )}
+                                        <div className="absolute top-3 right-3">
+                                            <div className="bg-white/90 backdrop-blur-sm p-1.5 rounded-full shadow-sm">
+                                                <TrendingUp className="w-3 h-3 text-orange-600" />
+                                            </div>
                                         </div>
-                                        <div className="space-y-1">
-                                            <p className="text-slate-500 font-bold uppercase tracking-wider text-[10px]">{cls.date}</p>
-                                            <p className="text-slate-900 font-bold text-xs">{cls.time}</p>
+                                    </div>
+
+                                    {/* Card Body */}
+                                    <div className="p-3 flex flex-col gap-2 flex-1">
+                                        {/* Tags */}
+                                        <div className="flex gap-1.5">
+                                            <span className="px-2 py-0.5 bg-orange-50 text-orange-600 rounded-full text-[9px] font-bold uppercase tracking-wide border border-orange-100">
+                                                Grade 12
+                                            </span>
+                                            <span className="px-2 py-0.5 bg-slate-50 text-slate-500 rounded-full text-[9px] font-bold uppercase tracking-wide border border-slate-100">
+                                                One-Shot
+                                            </span>
                                         </div>
 
-                                        <h3 className={`text-2xl font-black py-2 ${cls.subject === 'MATHEMATICS' ? 'text-orange-500' :
-                                            cls.subject === 'PHYSICS' ? 'text-pink-500' :
-                                                cls.subject === 'CHEMISTRY' ? 'text-purple-500' : 'text-teal-500'
-                                            }`}>{cls.subject}</h3>
+                                        {/* Title & Price */}
+                                        <div className="flex justify-between items-start">
+                                            <div>
+                                                <h3 className="text-xl font-black text-slate-900 leading-tight">{cls.subject}</h3>
+                                                <p className="text-[10px] font-bold text-slate-500 mt-0.5">{cls.date}</p>
+                                            </div>
+                                            <span className="text-emerald-500 font-black text-base">FREE</span>
+                                        </div>
 
-                                        <div className="py-2">
-                                            <span className="text-slate-400 font-bold tracking-[0.2em] text-[10px] uppercase">FREE</span>
+                                        {/* Description */}
+                                        <p className="text-[10px] text-slate-600 font-medium leading-relaxed">
+                                            Live on <span className="text-slate-900 font-bold">{cls.time}</span>. Master the subject.
+                                        </p>
+
+                                        {/* Timer Section */}
+                                        <div className="mt-auto pt-2 border-t border-slate-100">
+                                            <p className="text-[8px] uppercase font-black text-slate-400 mb-1.5 tracking-wider text-center">Class Starts In</p>
+                                            <CourseTimer targetDate={cls.startDate} />
                                         </div>
 
                                         <button
                                             onClick={() => handleClassSelect('Grade 12')}
-                                            className="w-full py-2.5 rounded-xl border-2 border-slate-200 text-slate-600 font-black uppercase tracking-wider text-xs hover:border-orange-500 hover:bg-orange-500 hover:text-white transition-all"
+                                            className="w-full py-2 bg-slate-900 text-white rounded-lg font-bold uppercase text-[9px] tracking-wider hover:bg-slate-800 transition-all shadow-lg shadow-slate-200 hover:shadow-xl flex items-center justify-center gap-2"
                                         >
-                                            Register
+                                            Register Now
                                         </button>
                                     </div>
                                 </motion.div>
@@ -412,6 +653,8 @@ const CBSERevisionPage = () => {
                 </div>
             </section>
 
+            {/* What You'll Revise */}
+            {/* What You'll Revise */}
             {/* What You'll Revise */}
             <section className="py-20 bg-slate-50">
                 <div className="max-w-6xl mx-auto px-6 md:px-12">
@@ -471,12 +714,12 @@ const CBSERevisionPage = () => {
                                 whileInView={{ opacity: 1, scale: 1 }}
                                 transition={{ delay: idx * 0.1 }}
                                 viewport={{ once: true }}
-                                className="p-6 bg-slate-50 rounded-xl border border-slate-200 hover:border-orange-200 hover:shadow-lg transition-all text-center"
+                                className="p-6 bg-orange-50/50 rounded-xl border border-orange-100 hover:bg-orange-50 hover:border-orange-300 hover:shadow-[0_0_40px_rgba(249,115,22,0.15)] transition-all duration-300 text-center hover:-translate-y-1"
                             >
-                                <div className="w-14 h-14 bg-orange-100 text-orange-600 rounded-xl flex items-center justify-center mx-auto mb-4">
+                                <div className="w-14 h-14 bg-orange-100 text-orange-600 rounded-xl flex items-center justify-center mx-auto mb-4 shadow-sm group-hover:scale-110 transition-transform duration-300">
                                     {item.icon}
                                 </div>
-                                <p className="font-bold text-slate-700">{item.text}</p>
+                                <p className="font-bold text-slate-800">{item.text}</p>
                             </motion.div>
                         ))}
                     </div>
@@ -538,7 +781,7 @@ const CBSERevisionPage = () => {
             </section >
 
             {/* Exam Prep Tips */}
-            < section className="py-20 bg-gradient-to-br from-primary-600 to-indigo-700 text-white" >
+            <section className="py-20 bg-gradient-to-br from-blue-500 to-indigo-600 text-white">
                 <div className="max-w-6xl mx-auto px-6 md:px-12">
                     <h2 className="text-3xl md:text-4xl font-black mb-10 text-center">Last-Minute Exam Preparation Tips</h2>
                     <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">

@@ -52,6 +52,14 @@ const UserSchema = new Schema({
     isPhoneVerified: {
         type: Boolean,
         default: false,
+    },
+    examStartDate: {
+        type: Date,
+        default: null,
+    },
+    examEndDate: {
+        type: Date,
+        default: null,
     }
 }, { timestamps: true });
 

@@ -13,12 +13,19 @@ export default function EnrollmentForm({ selectedSubjects = [], onClose }: Enrol
     phone: '',
     email: '',
     schoolName: '',
+    examStartDate: '',
+    examEndDate: '',
   })
   const [errors, setErrors] = useState<string[]>([])
 
   const totalAmount = selectedSubjects.reduce((sum, s) => sum + (s.price || 0), 0)
   const selectedClass = selectedSubjects.length > 0 ? selectedSubjects[0].class : ''
   const selectedBoard = selectedSubjects.length > 0 ? selectedSubjects[0].board : ''
+
+  const isSchoolCategory = selectedClass && (
+    ['9', '11'].includes(selectedClass) ||
+    !isNaN(parseInt(selectedClass))
+  )
 
   const validateForm = () => {
     const newErrors: string[] = []
@@ -75,6 +82,8 @@ export default function EnrollmentForm({ selectedSubjects = [], onClose }: Enrol
         phone: '',
         email: '',
         schoolName: '',
+        examStartDate: '',
+        examEndDate: '',
       })
       onClose()
     } catch (error) {
@@ -212,6 +221,40 @@ export default function EnrollmentForm({ selectedSubjects = [], onClose }: Enrol
               />
             </div>
           </div>
+
+          {isSchoolCategory && (
+            <div className="mb-6 p-6 bg-primary-50/30 rounded-2xl border border-primary-100">
+              <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center">
+                <span className="mr-2">📅</span> School Exam Schedule
+                <span className="ml-2 text-xs font-normal text-gray-500">(Optional - helps us customize your plan)</span>
+              </h3>
+              <div className="grid md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-gray-700 font-semibold mb-2 text-sm">Exam Start Date</label>
+                  <input
+                    type="date"
+                    name="examStartDate"
+                    value={formData.examStartDate}
+                    onChange={(e) => setFormData({ ...formData, examStartDate: e.target.value })}
+                    className="w-full px-4 py-3 rounded-lg border-2 border-gray-200 focus:border-primary-500 focus:outline-none transition bg-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-gray-700 font-semibold mb-2 text-sm">Exam End Date</label>
+                  <input
+                    type="date"
+                    name="examEndDate"
+                    value={formData.examEndDate}
+                    onChange={(e) => setFormData({ ...formData, examEndDate: e.target.value })}
+                    className="w-full px-4 py-3 rounded-lg border-2 border-gray-200 focus:border-primary-500 focus:outline-none transition bg-white"
+                  />
+                </div>
+              </div>
+              <p className="mt-3 text-xs text-gray-500 italic">
+                * For Grades 9, 11, and other school categories, please enter your specific school exam dates as they vary by institution.
+              </p>
+            </div>
+          )}
 
           <div className="flex gap-4">
             <button
