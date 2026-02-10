@@ -1,13 +1,13 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import PublicHeader from '@/components/PublicHeader';
 import PublicFooter from '@/components/PublicFooter';
 import { motion } from 'framer-motion';
 import { Play, MessageCircle, FileText, CheckCircle2, AlertCircle, Users } from 'lucide-react';
 
-const LiveClassroom = () => {
+const LiveClassroomContent = () => {
     const searchParams = useSearchParams();
     const token = searchParams.get('token');
     const [accessGranted, setAccessGranted] = useState<boolean | null>(null);
@@ -204,6 +204,18 @@ const LiveClassroom = () => {
                 </div>
             </div>
         </div>
+    );
+};
+
+const LiveClassroom = () => {
+    return (
+        <Suspense fallback={
+            <div className="min-h-screen bg-slate-900 flex items-center justify-center text-white">
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-orange-500"></div>
+            </div>
+        }>
+            <LiveClassroomContent />
+        </Suspense>
     );
 };
 

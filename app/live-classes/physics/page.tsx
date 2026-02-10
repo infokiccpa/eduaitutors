@@ -20,7 +20,8 @@ import {
     Phone,
     ArrowRight,
     CheckCircle2,
-    Loader2
+    Loader2,
+    Mail
 } from 'lucide-react'
 
 const PhysicsLiveStreamPage = () => {

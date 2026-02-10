@@ -4,7 +4,9 @@ import User from '@/models/User';
 import QuizResult from '@/models/QuizResult';
 import Activity from '@/models/Activity';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '@/app/api/auth/[...nextauth]/route';
+import { authOptions } from '@/lib/auth';
+
+export const dynamic = 'force-dynamic';
 
 export async function GET(req: Request) {
     try {

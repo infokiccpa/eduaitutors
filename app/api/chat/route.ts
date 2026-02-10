@@ -1,11 +1,13 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '@/app/api/auth/[...nextauth]/route';
+import { authOptions } from '@/lib/auth';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import dbConnect from '@/lib/mongodb';
 import Course from '@/models/Course';
 import LessonProgress from '@/models/LessonProgress';
 import QuizResult from '@/models/QuizResult';
+
+export const dynamic = 'force-dynamic';
 
 // Initialize Gemini AI
 const genAI = process.env.GEMINI_API_KEY

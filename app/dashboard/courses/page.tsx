@@ -66,7 +66,7 @@ export default function DashboardCourses() {
         )
     }
 
-    if (status === 'loading' || !user) return null
+    if (!user) return null
 
     const availableCourses = courses || []
 

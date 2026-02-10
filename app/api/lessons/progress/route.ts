@@ -3,7 +3,9 @@ import dbConnect from '@/lib/mongodb';
 import LessonProgress from '@/models/LessonProgress';
 import Activity from '@/models/Activity';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '@/app/api/auth/[...nextauth]/route';
+import { authOptions } from '@/lib/auth';
+
+export const dynamic = 'force-dynamic';
 
 export async function POST(req: Request) {
     try {
