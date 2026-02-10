@@ -5,6 +5,7 @@ import 'react-toastify/dist/ReactToastify.css'
 import './globals.css'
 import { Providers } from '@/components/Providers'
 import ChatWidget from '@/components/ChatWidget'
+import WhatsAppButton from '@/components/WhatsAppButton'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -24,6 +25,7 @@ export default function RootLayout({
         <Providers>
           {children}
           <ChatWidget />
+          <WhatsAppButton />
           <ToastContainer position="top-right" autoClose={3000} />
         </Providers>
       </body>

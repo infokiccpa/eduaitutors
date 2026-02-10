@@ -173,7 +173,7 @@ const HeroCountdown = ({ classes }: { classes: any[] }) => {
     );
 };
 
-const CBSERevisionPage = () => {
+const IndiaRevisionPage = () => {
     const [formData, setFormData] = useState({
         fullName: '',
         phoneNumber: '',
@@ -187,15 +187,15 @@ const CBSERevisionPage = () => {
     const [selectedSubjects, setSelectedSubjects] = useState<string[]>([])
 
     const grade10Classes = [
-        { grade: 'Grade 10', subject: 'MATHEMATICS', date: '15 FEBRUARY', time: '8 AM - 3 PM', startDate: '2026-02-15T08:00:00', color: 'bg-blue-600', image: '/grade_10_maths_bg.png' },
-        { grade: 'Grade 10', subject: 'SCIENCE', date: '22 FEBRUARY', time: '8 AM - 3 PM', startDate: '2026-02-22T08:00:00', color: 'bg-emerald-600', image: '/grade_10_science_bg.png' }
+        { grade: 'Grade 10', subject: 'MATHEMATICS', date: '15 FEBRUARY', time: '8 AM - 3 PM', startDate: '2026-02-15T08:00:00+05:30', color: 'bg-blue-600', image: '/india/Grade10-Maths.png' },
+        { grade: 'Grade 10', subject: 'SCIENCE', date: '22 FEBRUARY', time: '8 AM - 3 PM', startDate: '2026-02-22T08:00:00+05:30', color: 'bg-emerald-600', image: '/india/Grade10-Science.png' }
     ]
 
     const grade12Classes = [
-        { grade: 'Grade 12', subject: 'PHYSICS', date: '13-14 FEBRUARY', time: '4 PM - 8 PM & 8 AM - 1 PM', startDate: '2026-02-13T16:00:00', color: 'bg-pink-600', image: '/grade_12_physics_bg.png' },
-        { grade: 'Grade 12', subject: 'BIOLOGY', date: '21-22 MARCH', time: '4 PM - 8 PM & 8 AM - 1 PM', startDate: '2026-03-21T16:00:00', color: 'bg-emerald-600', image: '/grade_12_biology_bg.png' },
-        { grade: 'Grade 12', subject: 'MATHEMATICS', date: '28 FEB - 1 MAR', time: '4 PM - 8 PM & 8 AM - 1 PM', startDate: '2026-02-28T16:00:00', color: 'bg-purple-600', image: '/grade_12_maths_bg.png' },
-        { grade: 'Grade 12', subject: 'CHEMISTRY', date: '21-24 FEBRUARY', time: '4 PM - 8 PM & 8 AM - 1 PM', startDate: '2026-02-21T16:00:00', color: 'bg-teal-600', image: '/grade_12_chemistry_bg.png' }
+        { grade: 'Grade 12', subject: 'PHYSICS', date: '13-14 FEBRUARY', time: '4 PM - 8 PM & 8 AM - 1 PM', startDate: '2026-02-13T16:00:00+05:30', color: 'bg-pink-600', image: '/india/Grade12-Physics.png' },
+        { grade: 'Grade 12', subject: 'BIOLOGY', date: '21-22 MARCH', time: '4 PM - 8 PM & 8 AM - 1 PM', startDate: '2026-03-21T16:00:00+05:30', color: 'bg-emerald-600', image: '/india/Grade12-Biology.png' },
+        { grade: 'Grade 12', subject: 'MATHEMATICS', date: '28 FEB - 1 MAR', time: '4 PM - 8 PM & 8 AM - 1 PM', startDate: '2026-02-28T16:00:00+05:30', color: 'bg-purple-600', image: '/india/Grade12-Maths.png' },
+        { grade: 'Grade 12', subject: 'CHEMISTRY', date: '21-24 FEBRUARY', time: '4 PM - 8 PM & 8 AM - 1 PM', startDate: '2026-02-21T16:00:00+05:30', color: 'bg-teal-600', image: '/india/Grade12-Chemistry.png' }
     ]
 
     const handleClassSelect = (grade: 'Grade 10' | 'Grade 12') => {
@@ -312,8 +312,8 @@ const CBSERevisionPage = () => {
                     phone: `91${formData.phoneNumber}`,
                     grade: selectedGrade,
                     subjects: selectedSubjects,
-                    courseInterest: `CBSE One-Shot Revision - ${selectedGrade}`,
-                    source: 'CBSE Revision Registration'
+                    courseInterest: `India One-Shot Revision - ${selectedGrade}`,
+                    source: 'India Revision Registration'
                 })
             })
             if (res.ok) {
@@ -885,4 +885,4 @@ const CBSERevisionPage = () => {
     )
 }
 
-export default CBSERevisionPage
+export default IndiaRevisionPage

@@ -139,15 +139,13 @@ export default function CoursesPage() {
           </div>
 
           <div className="mt-auto flex items-center justify-between">
-            <div className="text-2xl font-black text-primary-600">
-              ₹{course.price.toLocaleString()}
+            <div className="flex flex-col">
+              <span className="text-[10px] font-black uppercase tracking-wider text-primary-500">Coming Soon</span>
             </div>
             <div
-              onClick={() => handleSubjectToggle(course)}
-              className={`w-8 h-8 rounded-lg border-2 flex items-center justify-center cursor-pointer transition-all ${isSelected ? 'bg-primary-600 border-primary-600 text-white' : 'border-slate-200 hover:border-primary-600'
-                }`}
+              className="w-8 h-8 rounded-lg border-2 border-slate-100 flex items-center justify-center cursor-not-allowed opacity-40 bg-slate-50"
             >
-              <CheckCircle2 className={`w-5 h-5 ${isSelected ? 'opacity-100' : 'opacity-0'}`} />
+              <CheckCircle2 className="w-5 h-5 text-slate-300" />
             </div>
           </div>
         </div>
@@ -244,12 +242,11 @@ export default function CoursesPage() {
 
                 <div className="mt-16 text-center">
                   <button
-                    onClick={() => setIsEnrollFormOpen(true)}
-                    className="group relative inline-flex items-center gap-4 px-12 py-6 bg-slate-900 text-white rounded-2xl font-black uppercase tracking-[0.2em] text-sm overflow-hidden transition-all hover:bg-primary-600 shadow-2xl hover:shadow-primary-600/40"
+                    disabled
+                    className="group relative inline-flex items-center gap-4 px-12 py-6 bg-slate-200 text-slate-400 rounded-2xl font-black uppercase tracking-[0.2em] text-sm cursor-not-allowed border border-slate-300 shadow-none"
                   >
-                    <span className="relative z-10">Enroll in Class {classNum}</span>
-                    <BookOpen className="w-5 h-5 relative z-10 transition-transform group-hover:translate-x-1" />
-                    <div className="absolute inset-0 bg-gradient-to-r from-primary-600 to-indigo-600 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                    <span className="relative z-10">Courses Launching Soon</span>
+                    <Clock className="w-5 h-5 relative z-10" />
                   </button>
                 </div>
               </motion.div>

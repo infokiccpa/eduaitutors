@@ -5,22 +5,33 @@ export async function POST(req: Request) {
         const { mobile, otp } = await req.json();
         const authKey = process.env.MSG91_AUTH_KEY;
 
+        console.log('OTP Verify Request:', { mobile, otp, hasAuthKey: !!authKey });
+
         if (!authKey) {
+            console.error('MSG91_AUTH_KEY is not configured');
             return NextResponse.json({ message: "MSG91 API key is not configured" }, { status: 500 });
         }
 
-        // MSG91 OTP Verify API
-        const response = await fetch(
-            `https://control.msg91.com/api/v5/otp/verify?otp=${otp}&mobile=${mobile}&authkey=${authKey}`,
-            { method: 'GET' }
-        );
+        if (!mobile || !otp) {
+            return NextResponse.json({ message: "Mobile number and OTP are required" }, { status: 400 });
+        }
 
+        // MSG91 OTP Verify API
+        const url = `https://control.msg91.com/api/v5/otp/verify?otp=${otp}&mobile=${mobile}&authkey=${authKey}`;
+        console.log('MSG91 Verify URL:', url.replace(authKey, '***'));
+
+        const response = await fetch(url, { method: 'GET' });
         const data = await response.json();
+        console.log('MSG91 Verify Response:', data);
 
         if (data.type === 'success') {
             return NextResponse.json({ message: "OTP verified successfully" });
         } else {
-            return NextResponse.json({ message: data.message || "Invalid OTP" }, { status: 400 });
+            console.error('MSG91 Verify Error:', data);
+            return NextResponse.json({
+                message: data.message || "Invalid OTP",
+                error: data
+            }, { status: 400 });
         }
     } catch (error) {
         console.error("OTP Verify Error:", error);

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, Suspense } from 'react'
 import Link from 'next/link'
 import PublicHeader from '@/components/PublicHeader'
 import PublicFooter from '@/components/PublicFooter'
@@ -61,7 +61,9 @@ export default function Home() {
       <PublicHeader />
 
       {/* Live Class Strip Banner */}
-      <LiveClassStrip />
+      <Suspense fallback={null}>
+        <LiveClassStrip />
+      </Suspense>
 
       {/* Hero Section */}
       <HeroSlider>

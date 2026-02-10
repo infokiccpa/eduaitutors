@@ -6,6 +6,7 @@ const LeadSchema = new Schema({
     phone: { type: String, required: true },
     courseInterest: { type: String },
     grade: { type: String },
+    subjects: [{ type: String }], // Array of selected subjects
     status: {
         type: String,
         enum: ['New', 'Contacted', 'Qualified', 'Lost', 'Enrolled'],
@@ -13,6 +14,7 @@ const LeadSchema = new Schema({
     },
     notes: { type: String },
     source: { type: String, default: 'Website' },
+    accessCode: { type: String, unique: true, sparse: true }, // Unique code for live class access
 }, { timestamps: true });
 
 const Lead = models.Lead || model('Lead', LeadSchema);

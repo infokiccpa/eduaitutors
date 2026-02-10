@@ -195,7 +195,7 @@ export default function PublicHeader() {
               ) : (
                 <div className="flex items-center space-x-3">
                   <Link
-                    href="/login?mode=signup"
+                    href="/?action=register"
                     className="px-6 py-3 rounded-full text-sm font-black uppercase tracking-widest text-gray-900 hover:bg-gray-100 transition-all"
                   >
                     Register
@@ -609,7 +609,7 @@ export default function PublicHeader() {
               ) : (
                 <div className="pt-4 border-t mt-4">
                   <Link
-                    href="/login?mode=signup"
+                    href="/?action=register"
                     className="block text-gray-700 hover:text-primary-600 font-medium mb-3 py-2"
                     onClick={() => setMobileMenuOpen(false)}
                   >

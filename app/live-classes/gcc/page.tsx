@@ -99,81 +99,9 @@ const CourseTimer = ({ targetDate }: { targetDate: string }) => {
     );
 };
 
-const HeroCountdown = ({ classes }: { classes: any[] }) => {
-    const [timeLeft, setTimeLeft] = useState<{ d: number, h: number, m: number, s: number } | null>(null);
-    const [targetClass, setTargetClass] = useState<any>(null);
 
-    React.useEffect(() => {
-        const findNextClass = () => {
-            const now = new Date().getTime();
-            // Filter and sort classes to find the nearest upcoming one
-            const upcoming = classes
-                .map(c => ({ ...c, startTime: new Date(c.startDate).getTime() }))
-                .filter(c => c.startTime > now)
-                .sort((a, b) => a.startTime - b.startTime)[0];
 
-            setTargetClass(upcoming);
-        };
-
-        findNextClass();
-        const interval = setInterval(findNextClass, 60000); // Check every minute for next class updates
-        return () => clearInterval(interval);
-    }, [classes]);
-
-    React.useEffect(() => {
-        if (!targetClass) return;
-
-        const calculateTime = () => {
-            const now = new Date().getTime();
-            const diff = targetClass.startTime - now;
-
-            if (diff > 0) {
-                setTimeLeft({
-                    d: Math.floor(diff / (1000 * 60 * 60 * 24)),
-                    h: Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
-                    m: Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60)),
-                    s: Math.floor((diff % (1000 * 60)) / 1000),
-                });
-            } else {
-                setTimeLeft(null);
-            }
-        };
-
-        calculateTime();
-        const timer = setInterval(calculateTime, 1000);
-        return () => clearInterval(timer);
-    }, [targetClass]);
-
-    if (!timeLeft || !targetClass) return null;
-
-    return (
-        <div className="mb-10">
-            <div className="flex items-center gap-2 mb-4">
-                <div className="w-2 h-2 rounded-full bg-orange-500 animate-pulse" />
-                <p className="text-orange-300 font-bold text-sm tracking-wider uppercase">
-                    Next Live Class: <span className="text-white">{targetClass.subject} ({targetClass.grade === 'Grade 10' ? '10th' : '12th'})</span>
-                </p>
-            </div>
-            <div className="flex gap-4">
-                {[
-                    { label: 'DAYS', val: timeLeft.d },
-                    { label: 'HOURS', val: timeLeft.h },
-                    { label: 'MINUTES', val: timeLeft.m },
-                    { label: 'SECONDS', val: timeLeft.s }
-                ].map((item, i) => (
-                    <div key={i} className="flex flex-col items-center">
-                        <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl w-16 h-16 sm:w-20 sm:h-20 flex items-center justify-center text-2xl sm:text-4xl font-black text-white shadow-xl">
-                            {item.val < 10 ? `0${item.val}` : item.val}
-                        </div>
-                        <span className="text-[10px] sm:text-xs text-orange-200/80 font-bold uppercase tracking-widest mt-2">{item.label}</span>
-                    </div>
-                ))}
-            </div>
-        </div>
-    );
-};
-
-const CBSERevisionPage = () => {
+const GCCRevisionPage = () => {
     const [formData, setFormData] = useState({
         fullName: '',
         phoneNumber: '',
@@ -187,15 +115,15 @@ const CBSERevisionPage = () => {
     const [selectedSubjects, setSelectedSubjects] = useState<string[]>([])
 
     const grade10Classes = [
-        { grade: 'Grade 10', subject: 'MATHEMATICS', date: '15 FEBRUARY', time: '8 AM - 3 PM', startDate: '2026-02-15T08:00:00', color: 'bg-blue-600', image: '/grade_10_maths_bg.png' },
-        { grade: 'Grade 10', subject: 'SCIENCE', date: '22 FEBRUARY', time: '8 AM - 3 PM', startDate: '2026-02-22T08:00:00', color: 'bg-emerald-600', image: '/grade_10_science_bg.png' }
+        { grade: 'Grade 10', subject: 'MATHEMATICS', date: '15 FEBRUARY', time: '8 AM - 3 PM', startDate: '2026-02-15T08:00:00+04:00', color: 'bg-blue-600', image: '/GCC/Grade10-Maths-ast.png' },
+        { grade: 'Grade 10', subject: 'SCIENCE', date: '22 FEBRUARY', time: '8 AM - 3 PM', startDate: '2026-02-22T08:00:00+04:00', color: 'bg-emerald-600', image: '/GCC/Grade10-Science-ast.png' }
     ]
 
     const grade12Classes = [
-        { grade: 'Grade 12', subject: 'PHYSICS', date: '13-14 FEBRUARY', time: '4 PM - 8 PM & 8 AM - 1 PM', startDate: '2026-02-13T16:00:00', color: 'bg-pink-600', image: '/grade_12_physics_bg.png' },
-        { grade: 'Grade 12', subject: 'BIOLOGY', date: '21-22 MARCH', time: '4 PM - 8 PM & 8 AM - 1 PM', startDate: '2026-03-21T16:00:00', color: 'bg-emerald-600', image: '/grade_12_biology_bg.png' },
-        { grade: 'Grade 12', subject: 'MATHEMATICS', date: '28 FEB - 1 MAR', time: '4 PM - 8 PM & 8 AM - 1 PM', startDate: '2026-02-28T16:00:00', color: 'bg-purple-600', image: '/grade_12_maths_bg.png' },
-        { grade: 'Grade 12', subject: 'CHEMISTRY', date: '21-24 FEBRUARY', time: '4 PM - 8 PM & 8 AM - 1 PM', startDate: '2026-02-21T16:00:00', color: 'bg-teal-600', image: '/grade_12_chemistry_bg.png' }
+        { grade: 'Grade 12', subject: 'PHYSICS', date: '13-14 FEBRUARY', time: '4 PM - 8 PM & 8 AM - 1 PM', startDate: '2026-02-13T16:00:00+04:00', color: 'bg-pink-600', image: '/GCC/Grade12-Physics-ast.png' },
+        { grade: 'Grade 12', subject: 'BIOLOGY', date: '21-22 MARCH', time: '4 PM - 8 PM & 8 AM - 1 PM', startDate: '2026-03-21T16:00:00+04:00', color: 'bg-emerald-600', image: '/GCC/Grade12-Biology-ast.png' },
+        { grade: 'Grade 12', subject: 'MATHEMATICS', date: '28 FEB - 1 MAR', time: '4 PM - 8 PM & 8 AM - 1 PM', startDate: '2026-02-28T16:00:00+04:00', color: 'bg-purple-600', image: '/GCC/Grade12-Maths-ast.png' },
+        { grade: 'Grade 12', subject: 'CHEMISTRY', date: '21-24 FEBRUARY', time: '4 PM - 8 PM & 8 AM - 1 PM', startDate: '2026-02-21T16:00:00+04:00', color: 'bg-teal-600', image: '/GCC/Grade12-Chemistry-ast.png' }
     ]
 
     const handleClassSelect = (grade: 'Grade 10' | 'Grade 12') => {
@@ -312,8 +240,8 @@ const CBSERevisionPage = () => {
                     phone: `91${formData.phoneNumber}`,
                     grade: selectedGrade,
                     subjects: selectedSubjects,
-                    courseInterest: `CBSE One-Shot Revision - ${selectedGrade}`,
-                    source: 'CBSE Revision Registration'
+                    courseInterest: `GCC One-Shot Revision - ${selectedGrade}`,
+                    source: 'GCC Revision Registration'
                 })
             })
             if (res.ok) {
@@ -342,7 +270,7 @@ const CBSERevisionPage = () => {
                 {/* CSS Based Abstract Background */}
                 <div className="absolute inset-0 overflow-hidden">
                     <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-orange-500/20 rounded-full blur-[120px] -translate-y-1/2 translate-x-1/3 animate-pulse" />
-                    <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-blue-600/20 rounded-full blur-[100px] translate-y-1/3 -translate-x-1/4" />
+                    <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-orange-500/10 rounded-full blur-[100px] translate-y-1/3 -translate-x-1/4" />
                     <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20" />
                     <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px]"></div>
                 </div>
@@ -371,8 +299,10 @@ const CBSERevisionPage = () => {
                             </h1>
 
                             <p className="text-xl text-slate-300 mb-10 leading-relaxed font-medium max-w-xl">
-                                Join the ultimate <strong>Free Revision Series</strong>. Master Maths, Science, Physics & Chemistry with India's best educators before it's too late.
+                                Join the ultimate <strong>Free Revision Series</strong>. Master Maths, Science, Physics & Chemistry with our best educators before it's too late.
                             </p>
+
+
 
                             <button
                                 onClick={() => document.getElementById('registration-form')?.scrollIntoView({ behavior: 'smooth' })}
@@ -407,9 +337,9 @@ const CBSERevisionPage = () => {
             <section className="py-12 bg-white">
                 <div className="max-w-7xl mx-auto px-6 md:px-12">
                     <div className="text-center mb-8 relative">
-                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-48 bg-blue-500/10 blur-[100px] rounded-full pointer-events-none" />
+                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-48 bg-orange-500/10 blur-[100px] rounded-full pointer-events-none" />
                         <h2 className="text-5xl font-black mb-4 tracking-tight relative z-10 text-slate-900">
-                            Choose Your <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">Class</span>
+                            Choose Your <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-600 to-orange-400">Class</span>
                         </h2>
                         <p className="text-lg text-slate-500 font-medium max-w-2xl mx-auto relative z-10">
                             Select your grade to view schedule & register
@@ -423,8 +353,8 @@ const CBSERevisionPage = () => {
                                 <div className="w-full border-t border-slate-200"></div>
                             </div>
                             <div className="relative z-10 bg-white px-6">
-                                <span className="inline-flex items-center gap-2 px-8 py-2.5 rounded-full border border-blue-100 bg-blue-50 text-blue-700 font-black tracking-widest uppercase shadow-sm text-lg">
-                                    <span className="w-2.5 h-2.5 rounded-full bg-blue-600 animate-pulse" />
+                                <span className="inline-flex items-center gap-2 px-8 py-2.5 rounded-full border border-orange-100 bg-orange-50 text-orange-700 font-black tracking-widest uppercase shadow-sm text-lg">
+                                    <span className="w-2.5 h-2.5 rounded-full bg-orange-600 animate-pulse" />
                                     Grade 10
                                 </span>
                             </div>
@@ -452,7 +382,7 @@ const CBSERevisionPage = () => {
                                         )}
                                         <div className="absolute top-3 right-3">
                                             <div className="bg-white/90 backdrop-blur-sm p-1.5 rounded-full shadow-sm">
-                                                <TrendingUp className="w-3 h-3 text-blue-600" />
+                                                <TrendingUp className="w-3 h-3 text-orange-600" />
                                             </div>
                                         </div>
                                     </div>
@@ -716,7 +646,7 @@ const CBSERevisionPage = () => {
             {/* Bottom Registration Form Section */}
             < section className="py-24 bg-slate-50 relative overflow-hidden" >
                 <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-orange-100 rounded-full blur-[120px] opacity-50 pointer-events-none" />
-                <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-blue-100 rounded-full blur-[100px] opacity-40 pointer-events-none" />
+                <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-slate-100 rounded-full blur-[100px] opacity-40 pointer-events-none" />
 
                 <div className="max-w-3xl mx-auto px-6 relative z-10">
                     <motion.div
@@ -861,6 +791,8 @@ const CBSERevisionPage = () => {
                                 </div>
                             </div>
 
+
+
                             <button
                                 type="submit"
                                 disabled={isLoading || !emailVerified || !formData.fullName || !validateEmail(formData.email) || selectedSubjects.length === 0}
@@ -885,4 +817,4 @@ const CBSERevisionPage = () => {
     )
 }
 
-export default CBSERevisionPage
+export default GCCRevisionPage

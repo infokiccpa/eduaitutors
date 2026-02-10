@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/mongodb';
 import User from '@/models/User';
 import bcrypt from 'bcryptjs';
+import { sendWelcomeEmail } from '@/lib/email';
 
 export async function POST(req: Request) {
     try {
@@ -33,6 +34,11 @@ export async function POST(req: Request) {
             board,
             subjects
         });
+
+        // Send welcome email (fire and forget)
+        sendWelcomeEmail(newUser.email, newUser.name).catch((err: any) =>
+            console.error('Welcome email failed:', err)
+        );
 
         return NextResponse.json({
             message: 'User created successfully',

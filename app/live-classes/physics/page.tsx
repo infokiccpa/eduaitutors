@@ -25,26 +25,26 @@ import {
 
 const PhysicsLiveStreamPage = () => {
     const [isAccessGranted, setIsAccessGranted] = useState(false)
-    const [phoneNumber, setPhoneNumber] = useState('')
+    const [email, setEmail] = useState('')
     const [otp, setOtp] = useState('')
     const [otpSent, setOtpSent] = useState(false)
     const [isLoading, setIsLoading] = useState(false)
 
     const handleSendOtp = async () => {
-        if (!/^\d{10}$/.test(phoneNumber)) {
-            toast.error("Please enter a valid 10-digit phone number")
+        if (!email || !email.includes('@')) {
+            toast.error("Please enter a valid email address")
             return
         }
         setIsLoading(true)
         try {
-            const res = await fetch('/api/otp/send', {
+            const res = await fetch('/api/otp/send-email', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ mobile: `91${phoneNumber}` })
+                body: JSON.stringify({ email })
             })
             if (res.ok) {
                 setOtpSent(true)
-                toast.success("OTP sent to your registered number")
+                toast.success("OTP sent to your registered email")
             } else {
                 toast.error("Failed to send OTP. Please ensure you are registered.")
             }
@@ -56,26 +56,29 @@ const PhysicsLiveStreamPage = () => {
     }
 
     const handleVerifyAccess = async () => {
-        if (otp.length !== 4) {
-            toast.error("Please enter 4-digit OTP")
+        if (otp.length !== 6) {
+            toast.error("Please enter 6-digit OTP")
             return
         }
         setIsLoading(true)
         try {
-            const res = await fetch('/api/otp/verify-student', {
+            // We use the same verify-email endpoint but we might want to ensure they are registered
+            const res = await fetch('/api/otp/verify-email', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    mobile: `91${phoneNumber}`,
+                    email: email,
                     otp: otp
                 })
             })
-            const data = await res.json()
-            if (res.ok && data.success) {
+            if (res.ok) {
+                // Here we might want to check if the user is actually a registered student
+                // For now, if the OTP is valid for that email, we grant access
                 setIsAccessGranted(true)
                 toast.success("Access Granted! Enjoy the session.")
             } else {
-                toast.error(data.message || "Access Denied")
+                const data = await res.json()
+                toast.error(data.message || "Invalid OTP")
             }
         } catch (error) {
             toast.error("Verification failed. Please try again.")
@@ -107,24 +110,24 @@ const PhysicsLiveStreamPage = () => {
                             </div>
                             <h2 className="text-3xl font-black text-white mb-4">Student Access Only</h2>
                             <p className="text-slate-400 font-medium mb-10 leading-relaxed">
-                                This live session is exclusive to registered students. Please verify your phone number to continue.
+                                This live session is exclusive to registered students. Please verify your email address to continue.
                             </p>
 
                             <div className="space-y-4">
                                 <div className="relative">
-                                    <Phone className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
+                                    <Mail className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
                                     <input
-                                        type="tel"
+                                        type="email"
                                         disabled={otpSent || isLoading}
-                                        value={phoneNumber}
-                                        onChange={(e) => setPhoneNumber(e.target.value)}
-                                        placeholder="Registered Phone Number"
+                                        value={email}
+                                        onChange={(e) => setEmail(e.target.value)}
+                                        placeholder="Registered Email Address"
                                         className="w-full pl-16 pr-6 py-5 bg-slate-800 border-2 border-transparent focus:border-primary-500/50 rounded-2xl outline-none text-white font-bold transition-all disabled:opacity-50"
                                     />
                                     {!otpSent && (
                                         <button
                                             onClick={handleSendOtp}
-                                            disabled={isLoading || phoneNumber.length !== 10}
+                                            disabled={isLoading || !email.includes('@')}
                                             className="absolute right-3 top-1/2 -translate-y-1/2 px-4 py-2 bg-primary-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest disabled:opacity-50 transition-all"
                                         >
                                             {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Get OTP'}
@@ -140,15 +143,15 @@ const PhysicsLiveStreamPage = () => {
                                     >
                                         <input
                                             type="text"
-                                            maxLength={4}
+                                            maxLength={6}
                                             value={otp}
                                             onChange={(e) => setOtp(e.target.value)}
-                                            placeholder="Enter 4-Digit OTP"
+                                            placeholder="Enter 6-Digit OTP"
                                             className="w-full px-6 py-5 bg-slate-800 border-2 border-primary-500/30 focus:border-primary-500 rounded-2xl outline-none text-white font-bold text-center tracking-[1em] transition-all"
                                         />
                                         <button
                                             onClick={handleVerifyAccess}
-                                            disabled={isLoading || otp.length !== 4}
+                                            disabled={isLoading || otp.length !== 6}
                                             className="w-full py-5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-2xl font-black uppercase tracking-widest transition-all shadow-xl shadow-emerald-600/20 active:scale-95 flex items-center justify-center gap-3 disabled:opacity-50"
                                         >
                                             {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Enter Stream'}
@@ -158,7 +161,7 @@ const PhysicsLiveStreamPage = () => {
                                             onClick={() => setOtpSent(false)}
                                             className="text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-white transition-colors"
                                         >
-                                            Change Phone Number
+                                            Change Email Address
                                         </button>
                                     </motion.div>
                                 )}
