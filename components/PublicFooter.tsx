@@ -88,7 +88,7 @@ export default function PublicFooter() {
                     Call Us
                   </p>
                   <p className="text-slate-200 font-medium text-sm">
-                    +91 98765 43210
+                    08042108882
                   </p>
                 </div>
               </li>
@@ -101,10 +101,10 @@ export default function PublicFooter() {
                     Email Support
                   </p>
                   <a
-                    href="mailto:info@kiccpa.com"
+                    href="mailto:info@kamglobalai.com"
                     className="text-slate-200 font-medium text-sm hover:text-orange-400 transition-colors"
                   >
-                    info@kiccpa.com
+                    info@kamglobalai.com
                   </a>
                 </div>
               </li>

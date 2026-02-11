@@ -10,8 +10,8 @@ export default function Footer() {
           <div>
             <h3 className="text-lg font-semibold mb-4">Contact Us</h3>
             <div className="space-y-2 text-gray-300">
-              <p><span className="font-medium">Email:</span> support@edualtutors.com</p>
-              <p><span className="font-medium">Phone:</span> +1 (555) 123-4567</p>
+              <p><span className="font-medium">Email:</span> info@kamglobalai.com</p>
+              <p><span className="font-medium">Phone:</span> 08042108882</p>
               <p><span className="font-medium">Website:</span> www.edualtutors.com</p>
             </div>
           </div>
