@@ -213,14 +213,14 @@ export default function LeadCaptureForm({ variant = 'inline' }: LeadCaptureFormP
                                 initial={{ opacity: 0, scale: 0.95 }}
                                 animate={{ opacity: 1, scale: 1 }}
                                 exit={{ opacity: 0, scale: 0.95 }}
-                                className="relative w-full max-w-2xl bg-white rounded-[3rem] shadow-2xl overflow-hidden"
+                                className="relative w-full max-w-2xl bg-white rounded-3xl md:rounded-[3rem] shadow-2xl overflow-hidden"
                             >
-                                <div className="p-8 border-b border-slate-100 flex items-center justify-between">
+                                <div className="p-6 md:p-8 border-b border-slate-100 flex items-center justify-between">
                                     <div>
-                                        <h2 className="text-3xl font-black text-slate-900 tracking-tight">
+                                        <h2 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight">
                                             Start Your Success Story
                                         </h2>
-                                        <p className="text-sm font-medium text-slate-500 mt-1">
+                                        <p className="text-xs md:text-sm font-medium text-slate-500 mt-1">
                                             Fill the form below and our experts will reach out
                                         </p>
                                     </div>
@@ -232,7 +232,7 @@ export default function LeadCaptureForm({ variant = 'inline' }: LeadCaptureFormP
                                     </button>
                                 </div>
 
-                                <div className="p-8">
+                                <div className="p-6 md:p-8">
                                     <FormContent />
                                 </div>
                             </motion.div>
@@ -245,25 +245,25 @@ export default function LeadCaptureForm({ variant = 'inline' }: LeadCaptureFormP
 
     // Inline variant
     return (
-        <div className="w-full max-w-2xl mx-auto bg-white rounded-[3rem] shadow-2xl border border-slate-100 overflow-hidden">
-            <div className="p-8 bg-gradient-to-br from-primary-50 to-white border-b border-primary-100">
+        <div className="w-full max-w-2xl mx-auto bg-white rounded-3xl md:rounded-[3rem] shadow-2xl border border-slate-100 overflow-hidden">
+            <div className="p-6 md:p-8 bg-gradient-to-br from-primary-50 to-white border-b border-primary-100">
                 <div className="flex items-center gap-3 mb-2">
-                    <div className="w-10 h-10 rounded-2xl bg-primary-600 flex items-center justify-center text-white shadow-lg shadow-primary-600/30">
-                        <Sparkles className="w-5 h-5" />
+                    <div className="w-8 h-8 md:w-10 md:h-10 rounded-xl md:rounded-2xl bg-primary-600 flex items-center justify-center text-white shadow-lg shadow-primary-600/30">
+                        <Sparkles className="w-4 h-4 md:w-5 md:h-5" />
                     </div>
-                    <span className="text-[10px] font-black uppercase tracking-[0.3em] text-primary-600">
+                    <span className="text-[9px] md:text-[10px] font-black uppercase tracking-[0.3em] text-primary-600">
                         Limited Seats Available
                     </span>
                 </div>
-                <h2 className="text-4xl font-black text-slate-900 tracking-tight mb-2">
+                <h2 className="text-3xl md:text-4xl font-black text-slate-900 tracking-tight mb-2">
                     Get Started Today!
                 </h2>
-                <p className="text-lg font-medium text-slate-600">
+                <p className="text-base md:text-lg font-medium text-slate-600">
                     Join thousands of students achieving their academic dreams with AI-powered learning.
                 </p>
             </div>
 
-            <div className="p-8">
+            <div className="p-6 md:p-8">
                 <FormContent />
             </div>
         </div>

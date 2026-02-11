@@ -331,7 +331,7 @@ export default function PackagesSection({ variant = 'full', onLinkClick, onlySub
               </div>
 
               <h2 className="text-5xl md:text-7xl font-black text-slate-900 mb-6 leading-[1.05] tracking-tight">
-                Explore <span className="bg-clip-text text-transparent bg-gradient-to-r from-orange-500 via-rose-500 to-primary-600">Learning Packages</span>
+                Explore <span className="bg-clip-text text-transparent bg-gradient-to-r from-orange-500 via-rose-500 to-primary-600">Other Packages</span>
               </h2>
 
               <p className="text-xl text-slate-500 font-medium max-w-2xl leading-relaxed">

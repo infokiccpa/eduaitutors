@@ -96,7 +96,7 @@ export default function PublicHeader() {
         <div
           className={`max-w-[90rem] mx-auto transition-all duration-500 border border-transparent bg-white/80 backdrop-blur-xl shadow-[0_8px_32px_rgba(0,0,0,0.08)] rounded-[2rem] border-white/40 px-6`}
         >
-          <div className={`flex justify-between items-center transition-all duration-500 ${isScrolled ? 'h-20' : 'h-24 md:h-32'
+          <div className={`flex justify-between items-center transition-all duration-500 ${isScrolled ? 'h-16 md:h-20' : 'h-20 md:h-32'
             }`}>
             <Link href="/" className="flex items-center space-x-3 group outline-none">
               <Image
@@ -105,7 +105,7 @@ export default function PublicHeader() {
                 width={320}
                 height={96}
                 priority
-                className={`w-auto transition-all duration-500 group-hover:scale-105 ${isScrolled ? 'h-14 md:h-16' : 'h-24 md:h-28'
+                className={`w-auto transition-all duration-500 group-hover:scale-105 ${isScrolled ? 'h-12 md:h-16' : 'h-16 md:h-28'
                   }`}
               />
             </Link>
