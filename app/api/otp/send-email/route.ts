@@ -11,9 +11,11 @@ export async function POST(req: Request) {
             await dbConnect();
         } catch (dbErr) {
             console.error("❌ Database Connection Error:", dbErr);
+            const isUriMissing = !process.env.MONGODB_URI && !process.env.NEXT_AT_MONGODB_URI;
             return NextResponse.json({
-                message: "Database connection failed. Please ensure MONGODB_URI is set.",
-                error: dbErr instanceof Error ? dbErr.message : String(dbErr)
+                message: isUriMissing ? "MONGODB_URI is missing in environment variables." : "Database connection failed. This is often due to IP Whitelisting issues in MongoDB Atlas.",
+                error: dbErr instanceof Error ? dbErr.message : String(dbErr),
+                action: "Please ensure your server IP is whitelisted in MongoDB Atlas (Network Access -> Add IP Address -> Allow Access From Anywhere)."
             }, { status: 500 });
         }
 
