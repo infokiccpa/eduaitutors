@@ -3,22 +3,29 @@ import nodemailer from 'nodemailer';
 // Email configuration - Optimized for Gmail and Production
 const transporter = nodemailer.createTransport({
     service: 'gmail',
+    pool: true, // Use connection pooling
+    maxConnections: 3,
+    maxMessages: 100,
     auth: {
         user: process.env.SMTP_USER,
         pass: process.env.SMTP_PASS,
     },
+    // Add timeouts to prevent 504 Gateway Timeout
+    connectionTimeout: 10000, // 10 seconds
+    greetingTimeout: 10000,
+    socketTimeout: 15000,
+    debug: process.env.NODE_ENV !== 'production',
+    logger: process.env.NODE_ENV !== 'production',
 });
 
 // Verify connection configuration
-if (process.env.NODE_ENV !== 'production') {
-    transporter.verify(function (error, success) {
-        if (error) {
-            console.error('❌ SMTP Connection Error:', error);
-        } else {
-            console.log('✅ SMTP Server is ready');
-        }
-    });
-}
+transporter.verify(function (error, success) {
+    if (error) {
+        console.error('❌ SMTP Connection Error:', error);
+    } else {
+        console.log('✅ SMTP Server is ready');
+    }
+});
 
 // Welcome email template
 const getWelcomeEmailHTML = (leadName: string) => `

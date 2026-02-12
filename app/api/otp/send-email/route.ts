@@ -3,6 +3,8 @@ import dbConnect from '@/lib/mongodb';
 import OTP from '@/models/OTP';
 import { sendOTPEmail } from '@/lib/email';
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(req: Request) {
     try {
         try {
@@ -49,10 +51,12 @@ export async function POST(req: Request) {
 
         // Send email
         console.log(`📧 Attempting to send OTP email to ${email}...`);
+        const startTime = Date.now();
         const emailRes = await sendOTPEmail(email, otpCode);
+        const duration = Date.now() - startTime;
 
         if (emailRes.success) {
-            console.log(`✅ OTP email sent successfully to ${email}`);
+            console.log(`✅ OTP email sent successfully to ${email} in ${duration}ms`);
             return NextResponse.json({ message: "OTP sent to your email" });
         } else {
             console.error(`❌ SMTP Error for ${email}:`, emailRes.message || emailRes.error);

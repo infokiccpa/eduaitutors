@@ -4,6 +4,8 @@ import dbConnect from '@/lib/mongodb';
 import Lead from '@/models/Lead';
 import { sendLeadNotificationToAdmin, sendWelcomeEmail, sendLiveClassLinkEmail } from '@/lib/email';
 
+export const dynamic = 'force-dynamic';
+
 // GET - Fetch all leads
 export async function GET(req: Request) {
     try {

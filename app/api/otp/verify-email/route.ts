@@ -2,9 +2,19 @@ import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/mongodb';
 import OTP from '@/models/OTP';
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(req: Request) {
     try {
-        await dbConnect();
+        try {
+            await dbConnect();
+        } catch (dbErr) {
+            console.error("❌ Database Connection Error:", dbErr);
+            return NextResponse.json({
+                message: "Database connection failed.",
+                error: dbErr instanceof Error ? dbErr.message : String(dbErr)
+            }, { status: 500 });
+        }
 
         const { email, otp } = await req.json();
 

@@ -13,7 +13,16 @@ export async function GET(req: Request) {
             return NextResponse.json({ valid: false, message: 'Token missing' }, { status: 400 });
         }
 
-        await dbConnect();
+        try {
+            await dbConnect();
+        } catch (dbErr) {
+            console.error("❌ Database Connection Error:", dbErr);
+            return NextResponse.json({
+                valid: false,
+                message: "Database connection failed.",
+                error: dbErr instanceof Error ? dbErr.message : String(dbErr)
+            }, { status: 500 });
+        }
         // Check if a lead exists with this access code
         const lead = await Lead.findOne({ accessCode: token });
 
