@@ -84,7 +84,7 @@ const getWelcomeEmailHTML = (leadName: string) => `
             </div>
             
             <div style="text-align: center;">
-                <a href="${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/courses" class="button">
+                <a href="${process.env.NEXT_PUBLIC_BASE_URL || 'https://eduaitutors.com/'}/courses" class="button">
                     Explore Our Courses 🚀
                 </a>
             </div>
@@ -295,7 +295,7 @@ export async function sendLiveClassLinkEmail(to: string, name: string, grade: st
             return { success: false, message: 'SMTP not configured' };
         }
 
-        const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
+        const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://eduaitutors.com/';
         const classLink = `${baseUrl}/live-classroom?grade=${encodeURIComponent(grade)}&subject=${encodeURIComponent(subjects[0])}&token=${accessCode}`;
 
         const mailOptions = {

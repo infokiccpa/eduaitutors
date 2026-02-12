@@ -303,6 +303,10 @@ const IndiaRevisionPage = () => {
             toast.error("Please complete all details and verify your email")
             return
         }
+        if (!formData.phoneNumber || !validatePhone(formData.phoneNumber)) {
+            toast.error("Please enter a valid 10-digit phone number")
+            return
+        }
         if (selectedSubjects.length === 0) {
             toast.error("Please select at least one subject")
             return
@@ -329,6 +333,8 @@ const IndiaRevisionPage = () => {
                 setEmailOtpSent(false)
                 setEmailOtp('')
                 setSelectedSubjects([])
+                // Scroll to top of page
+                window.scrollTo({ top: 0, behavior: 'smooth' })
             } else {
                 toast.error("Failed to register. Please try again.")
             }
@@ -789,7 +795,7 @@ const IndiaRevisionPage = () => {
                             </div>
 
                             <div className="space-y-2">
-                                <label className="text-xs font-black uppercase tracking-wider text-slate-700 ml-1">Full Name</label>
+                                <label className="text-xs font-black uppercase tracking-wider text-slate-700 ml-1">Full Name *</label>
                                 <div className="relative group">
                                     <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-orange-500 transition-colors" />
                                     <input
@@ -798,13 +804,30 @@ const IndiaRevisionPage = () => {
                                         value={formData.fullName}
                                         onChange={handleInputChange}
                                         placeholder="Enter your full name"
+                                        required
                                         className="w-full pl-12 pr-4 py-4 bg-slate-50 border-2 border-slate-200 focus:border-orange-500 focus:bg-white rounded-2xl outline-none transition-all font-bold text-slate-900 placeholder:font-medium"
                                     />
                                 </div>
                             </div>
 
                             <div className="space-y-2">
-                                <label className="text-xs font-black uppercase tracking-wider text-slate-700 ml-1">Email Address</label>
+                                <label className="text-xs font-black uppercase tracking-wider text-slate-700 ml-1">Phone Number *</label>
+                                <div className="relative group">
+                                    <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-orange-500 transition-colors" />
+                                    <input
+                                        type="tel"
+                                        name="phoneNumber"
+                                        value={formData.phoneNumber}
+                                        onChange={handleInputChange}
+                                        placeholder="10-digit number"
+                                        required
+                                        className="w-full pl-12 pr-4 py-4 bg-slate-50 border-2 border-slate-200 focus:border-orange-500 focus:bg-white rounded-2xl outline-none transition-all font-bold text-slate-900 placeholder:font-medium"
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="space-y-2">
+                                <label className="text-xs font-black uppercase tracking-wider text-slate-700 ml-1">Email Address *</label>
                                 <div className="flex gap-2">
                                     <div className="relative flex-1 group">
                                         <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-orange-500 transition-colors" />
@@ -815,6 +838,7 @@ const IndiaRevisionPage = () => {
                                             onChange={handleInputChange}
                                             disabled={emailVerified || isLoading}
                                             placeholder="your@email.com"
+                                            required
                                             className={`w-full pl-12 pr-4 py-4 bg-slate-50 border-2 border-slate-200 focus:border-orange-500 focus:bg-white rounded-2xl outline-none transition-all font-bold text-slate-900 placeholder:font-medium ${emailVerified ? 'opacity-60' : ''}`}
                                         />
                                         {emailVerified && <CheckCircle2 className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-emerald-500" />}
@@ -852,25 +876,10 @@ const IndiaRevisionPage = () => {
                                 )}
                             </div>
 
-                            <div className="space-y-2">
-                                <label className="text-xs font-black uppercase tracking-wider text-slate-700 ml-1">Phone Number</label>
-                                <div className="relative group">
-                                    <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-orange-500 transition-colors" />
-                                    <input
-                                        type="tel"
-                                        name="phoneNumber"
-                                        value={formData.phoneNumber}
-                                        onChange={handleInputChange}
-                                        placeholder="10-digit number"
-                                        className="w-full pl-12 pr-4 py-4 bg-slate-50 border-2 border-slate-200 focus:border-orange-500 focus:bg-white rounded-2xl outline-none transition-all font-bold text-slate-900 placeholder:font-medium"
-                                    />
-                                </div>
-                            </div>
-
                             <button
                                 type="submit"
-                                disabled={isLoading || !emailVerified || !formData.fullName || !validateEmail(formData.email) || selectedSubjects.length === 0}
-                                className={`w-full py-5 rounded-2xl font-black uppercase tracking-wider text-lg transition-all shadow-xl shadow-orange-500/20 hover:shadow-orange-500/40 active:scale-95 ${(emailVerified && formData.fullName && validateEmail(formData.email) && selectedSubjects.length > 0)
+                                disabled={isLoading || !emailVerified || !formData.fullName || !formData.phoneNumber || !validatePhone(formData.phoneNumber) || !validateEmail(formData.email) || selectedSubjects.length === 0}
+                                className={`w-full py-5 rounded-2xl font-black uppercase tracking-wider text-lg transition-all shadow-xl shadow-orange-500/20 hover:shadow-orange-500/40 active:scale-95 ${(emailVerified && formData.fullName && formData.phoneNumber && validatePhone(formData.phoneNumber) && validateEmail(formData.email) && selectedSubjects.length > 0)
                                     ? 'bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white'
                                     : 'bg-slate-200 text-slate-400 cursor-not-allowed'
                                     }`}
