@@ -14,11 +14,16 @@ if (!cached) {
 }
 
 async function dbConnect() {
-    const MONGODB_URI = process.env.MONGODB_URI;
+    // Force a fresh read of the environment
+    const MONGODB_URI = process.env.MONGODB_URI || process.env.NEXT_AT_MONGODB_URI;
 
     if (!MONGODB_URI) {
-        console.error("❌ MONGODB_URI is not defined in process.env");
-        throw new Error('Please define the MONGODB_URI environment variable in your AWS/Hosting dashboard');
+        const availableKeys = Object.keys(process.env).filter(key =>
+            !key.includes('PASS') && !key.includes('SECRET') && !key.includes('KEY') && !key.includes('TOKEN')
+        ).join(', ');
+
+        console.error("❌ MONGODB_URI not found. Available env keys:", availableKeys);
+        throw new Error(`MONGODB_URI is missing in AWS Runtime. See server logs for available keys.`);
     }
 
     if (cached.conn) {
