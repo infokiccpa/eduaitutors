@@ -1,15 +1,24 @@
 import nodemailer from 'nodemailer';
 
-// Email configuration - Use environment variables in production
+// Email configuration - Optimized for Gmail and Production
 const transporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST || 'smtp.gmail.com',
-    port: parseInt(process.env.SMTP_PORT || '587'),
-    secure: false, // true for 465, false for other ports
+    service: 'gmail',
     auth: {
-        user: process.env.SMTP_USER, // Your email
-        pass: process.env.SMTP_PASS, // App password (not regular password)
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS,
     },
 });
+
+// Verify connection configuration
+if (process.env.NODE_ENV !== 'production') {
+    transporter.verify(function (error, success) {
+        if (error) {
+            console.error('❌ SMTP Connection Error:', error);
+        } else {
+            console.log('✅ SMTP Server is ready');
+        }
+    });
+}
 
 // Welcome email template
 const getWelcomeEmailHTML = (leadName: string) => `

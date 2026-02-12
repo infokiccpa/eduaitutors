@@ -43,14 +43,23 @@ const PhysicsLiveStreamPage = () => {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email })
             })
+
+            let data;
+            const contentType = res.headers.get("content-type");
+            if (contentType && contentType.indexOf("application/json") !== -1) {
+                data = await res.json();
+            }
+
             if (res.ok) {
                 setOtpSent(true)
                 toast.success("OTP sent to your registered email")
             } else {
-                toast.error("Failed to send OTP. Please ensure you are registered.")
+                const errorMessage = data?.message || data?.error || "Failed to send OTP. Please ensure you are registered.";
+                toast.error(errorMessage)
             }
         } catch (error) {
-            toast.error("An error occurred. Please try again.")
+            console.error("OTP Send Error:", error)
+            toast.error("An error occurred. Please check your connection.")
         } finally {
             setIsLoading(false)
         }

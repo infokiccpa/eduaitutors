@@ -170,17 +170,23 @@ const GCCRevisionPage = () => {
                 body: JSON.stringify({ email: formData.email })
             })
 
-            const data = await response.json()
+            let data;
+            const contentType = response.headers.get("content-type");
+            if (contentType && contentType.indexOf("application/json") !== -1) {
+                data = await response.json();
+            }
 
             if (response.ok) {
                 setEmailOtpSent(true)
                 toast.success("OTP sent to your email!")
             } else {
-                toast.error(data.message || "Failed to send OTP")
+                const errorMessage = data?.message || data?.error || "Failed to send OTP";
+                toast.error(errorMessage)
+                console.error("OTP Error Details:", data);
             }
         } catch (error) {
             console.error("OTP Send Error:", error)
-            toast.error("Failed to send OTP. Please try again.")
+            toast.error("Failed to fetch OTP. Please check your connection.")
         } finally {
             setIsLoading(false)
         }
