@@ -23,6 +23,9 @@ export default function PublicFooter() {
             <p className="text-slate-400 leading-relaxed text-sm">
               Empowering students with high-quality live interactive classes and AI-driven structured learning paths for guaranteed success.
             </p>
+            <p className="text-slate-500 text-xs mt-4 font-medium">
+              Powered by Kuwait International Company for Computer Programming Activities (kiccpa)
+            </p>
           </div>
 
           {/* Academic Pathways */}
@@ -88,7 +91,7 @@ export default function PublicFooter() {
                     Call Us
                   </p>
                   <p className="text-slate-200 font-medium text-sm">
-                    08042108882
+                    080-42108882
                   </p>
                 </div>
               </li>
@@ -114,10 +117,17 @@ export default function PublicFooter() {
                 </div>
                 <div>
                   <p className="text-xs font-medium text-slate-500 mb-1">
-                    Our Location
+                    Kuwait Head Office
+                  </p>
+                  <p className="text-slate-200 font-medium text-sm mb-3">
+                    Block 4, Tunisia St., Al Barsha Mall, Second Floor, Hawally, Kuwait
+                  </p>
+
+                  <p className="text-xs font-medium text-slate-500 mb-1">
+                    India Office
                   </p>
                   <p className="text-slate-200 font-medium text-sm">
-                    Bangalore, India
+                    544, 3rd Cross Rd, opposite BDA complex, Ganganagar, P&T Colony, RT Nagar, Bengaluru, Karnataka 560032
                   </p>
                 </div>
               </li>

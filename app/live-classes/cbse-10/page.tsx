@@ -60,9 +60,9 @@ const CourseTimer = ({ targetDate }: { targetDate: string }) => {
     }, [targetDate]);
 
     if (status === 'ENDED') return (
-        <div className="py-4">
-            <span className="inline-flex items-center px-4 py-1.5 rounded-full bg-slate-100 text-slate-500 font-bold text-xs uppercase tracking-wider border border-slate-200">
-                Class Ended
+        <div className="py-4 w-full flex justify-center">
+            <span className="inline-flex items-center gap-2 px-6 py-2 rounded-full bg-red-50 text-red-600 font-black text-xs uppercase tracking-widest border border-red-100 shadow-sm">
+                Slot Full
             </span>
         </div>
     );
@@ -192,7 +192,7 @@ const CBSERevisionPage = () => {
     ]
 
     const grade12Classes = [
-        { grade: 'Grade 12', subject: 'PHYSICS', date: '13-14 FEBRUARY', time: '4 PM - 8 PM & 8 AM - 1 PM', startDate: '2026-02-13T16:00:00', color: 'bg-pink-600', image: '/grade_12_physics_bg.png' },
+        { grade: 'Grade 12', subject: 'PHYSICS', date: '17 FEBRUARY', time: '4 PM - 8 PM', startDate: '2026-02-17T16:00:00', color: 'bg-pink-600', image: '/grade_12_physics_bg.png' },
         { grade: 'Grade 12', subject: 'BIOLOGY', date: '21-22 MARCH', time: '4 PM - 8 PM & 8 AM - 1 PM', startDate: '2026-03-21T16:00:00', color: 'bg-emerald-600', image: '/grade_12_biology_bg.png' },
         { grade: 'Grade 12', subject: 'MATHEMATICS', date: '28 FEB - 1 MAR', time: '4 PM - 8 PM & 8 AM - 1 PM', startDate: '2026-02-28T16:00:00', color: 'bg-purple-600', image: '/grade_12_maths_bg.png' },
         { grade: 'Grade 12', subject: 'CHEMISTRY', date: '21-24 FEBRUARY', time: '4 PM - 8 PM & 8 AM - 1 PM', startDate: '2026-02-21T16:00:00', color: 'bg-teal-600', image: '/grade_12_chemistry_bg.png' }
@@ -327,7 +327,7 @@ const CBSERevisionPage = () => {
                 })
             })
             if (res.ok) {
-                toast.success("Registration successful! We will send you the class link shortly.")
+                toast.success("🎉 Registration Successful! Thank you for registering. Get ready for an amazing learning experience! We'll send you the class link shortly.")
                 setFormData({ fullName: '', phoneNumber: '', email: '' })
                 setEmailVerified(false)
                 setEmailOtpSent(false)
@@ -479,12 +479,21 @@ const CBSERevisionPage = () => {
                                             <CourseTimer targetDate={cls.startDate} />
                                         </div>
 
-                                        <button
-                                            onClick={() => handleClassSelect('Grade 10')}
-                                            className="w-full py-2 bg-slate-900 text-white rounded-lg font-bold uppercase text-[9px] tracking-wider hover:bg-slate-800 transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
-                                        >
-                                            Register Now
-                                        </button>
+                                        {new Date().getTime() > new Date(cls.startDate).getTime() + (3 * 60 * 60 * 1000) ? (
+                                            <button
+                                                disabled
+                                                className="w-full py-2 bg-slate-100 text-slate-400 rounded-lg font-bold uppercase text-[9px] tracking-wider cursor-not-allowed flex items-center justify-center gap-2 border border-slate-200"
+                                            >
+                                                Registration Closed
+                                            </button>
+                                        ) : (
+                                            <button
+                                                onClick={() => handleClassSelect('Grade 10')}
+                                                className="w-full py-2 bg-slate-900 text-white rounded-lg font-bold uppercase text-[9px] tracking-wider hover:bg-slate-800 transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
+                                            >
+                                                Register Now
+                                            </button>
+                                        )}
                                     </div>
                                 </motion.div>
                             ))}
@@ -541,12 +550,21 @@ const CBSERevisionPage = () => {
                                             <CourseTimer targetDate={cls.startDate} />
                                         </div>
 
-                                        <button
-                                            onClick={() => handleClassSelect('Grade 12')}
-                                            className="w-full py-2 bg-slate-900 text-white rounded-lg font-bold uppercase text-[9px] tracking-wider hover:bg-slate-800 transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
-                                        >
-                                            Register Now
-                                        </button>
+                                        {new Date().getTime() > new Date(cls.startDate).getTime() + (3 * 60 * 60 * 1000) ? (
+                                            <button
+                                                disabled
+                                                className="w-full py-2 bg-slate-100 text-slate-400 rounded-lg font-bold uppercase text-[9px] tracking-wider cursor-not-allowed flex items-center justify-center gap-2 border border-slate-200"
+                                            >
+                                                Registration Closed
+                                            </button>
+                                        ) : (
+                                            <button
+                                                onClick={() => handleClassSelect('Grade 12')}
+                                                className="w-full py-2 bg-slate-900 text-white rounded-lg font-bold uppercase text-[9px] tracking-wider hover:bg-slate-800 transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
+                                            >
+                                                Register Now
+                                            </button>
+                                        )}
                                     </div>
                                 </motion.div>
                             ))}
