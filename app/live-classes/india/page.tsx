@@ -192,7 +192,7 @@ const IndiaRevisionPage = () => {
     ]
 
     const grade12Classes = [
-        { grade: 'Grade 12', subject: 'PHYSICS', date: '17-18 FEBRUARY', time: '2:30 PM - 6:30 PM & 5:30 AM - 10:30 AM', startDate: '2026-02-17T14:30:00+05:30', color: 'bg-pink-600', image: '/india/Grade12 Physics.png' },
+        { grade: 'Grade 12', subject: 'PHYSICS', date: '17-18 FEBRUARY', time: '1:30 PM - 5:30 PM & 5:30 AM - 10:30 AM', startDate: '2026-02-17T13:30:00+05:30', color: 'bg-pink-600', image: '/india/Grade-12 Physics.png' },
         { grade: 'Grade 12', subject: 'BIOLOGY', date: '21-22 MARCH', time: '4 PM - 8 PM & 8 AM - 1 PM', startDate: '2026-03-21T16:00:00+05:30', color: 'bg-emerald-600', image: '/india/Grade12-Biology.png' },
         { grade: 'Grade 12', subject: 'MATHEMATICS', date: '28 FEB - 1 MAR', time: '4 PM - 8 PM & 8 AM - 1 PM', startDate: '2026-02-28T16:00:00+05:30', color: 'bg-purple-600', image: '/india/Grade12-Maths.png' },
         { grade: 'Grade 12', subject: 'CHEMISTRY', date: '21-24 FEBRUARY', time: '4 PM - 8 PM & 8 AM - 1 PM', startDate: '2026-02-21T16:00:00+05:30', color: 'bg-teal-600', image: '/india/Grade12-Chemistry.png' }
