@@ -68,54 +68,67 @@ const LiveClassroomContent = () => {
         if (classStatus !== 'LIVE' || !videoRef.current) return;
 
         const video = videoRef.current;
+        let hls: Hls | null = null;
 
-        if (Hls.isSupported()) {
-            const hls = new Hls({
-                debug: false,
-                enableWorker: true,
-                lowLatencyMode: true,
-                backBufferLength: 90
-            });
-
-            hlsRef.current = hls;
-            hls.loadSource(videoUrl);
-            hls.attachMedia(video);
-
-            hls.on(Hls.Events.MANIFEST_PARSED, () => {
-                console.log('✅ HLS stream loaded successfully');
-                video.play().catch(err => console.log('Autoplay prevented:', err));
-            });
-
-            hls.on(Hls.Events.ERROR, (event, data) => {
-                console.error('❌ HLS Error:', data);
-                if (data.fatal) {
-                    switch (data.type) {
-                        case Hls.ErrorTypes.NETWORK_ERROR:
-                            console.log('Network error, trying to recover...');
-                            hls.startLoad();
-                            break;
-                        case Hls.ErrorTypes.MEDIA_ERROR:
-                            console.log('Media error, trying to recover...');
-                            hls.recoverMediaError();
-                            break;
-                        default:
-                            hls.destroy();
-                            break;
-                    }
-                }
-            });
-
-            return () => {
+        const initPlayer = () => {
+            if (hls) {
                 hls.destroy();
-            };
-        } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-            // For Safari/iOS native HLS support
-            video.src = videoUrl;
-            video.addEventListener('loadedmetadata', () => {
-                console.log('✅ Video loaded (native HLS)');
-                video.play().catch(err => console.log('Autoplay prevented:', err));
-            });
-        }
+            }
+
+            if (Hls.isSupported()) {
+                hls = new Hls({
+                    debug: false,
+                    enableWorker: true,
+                    lowLatencyMode: true,
+                    backBufferLength: 90
+                });
+
+                hlsRef.current = hls;
+                hls.loadSource(videoUrl);
+                hls.attachMedia(video);
+
+                hls.on(Hls.Events.MANIFEST_PARSED, () => {
+                    console.log('✅ HLS stream loaded successfully');
+                    video.play().catch(err => {
+                        console.log('Autoplay prevented, waiting for user interaction:', err);
+                    });
+                });
+
+                hls.on(Hls.Events.ERROR, (event, data) => {
+                    console.error('❌ HLS Error:', data);
+                    if (data.fatal) {
+                        switch (data.type) {
+                            case Hls.ErrorTypes.NETWORK_ERROR:
+                                console.log('Network error, trying to recover...');
+                                hls?.startLoad();
+                                break;
+                            case Hls.ErrorTypes.MEDIA_ERROR:
+                                console.log('Media error, trying to recover...');
+                                hls?.recoverMediaError();
+                                break;
+                            default:
+                                console.error('Fatal error, cannot recover automatically');
+                                break;
+                        }
+                    }
+                });
+            } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+                // For Safari/iOS native HLS support
+                video.src = videoUrl;
+                video.addEventListener('loadedmetadata', () => {
+                    console.log('✅ Video loaded (native HLS)');
+                    video.play().catch(err => console.log('Autoplay prevented:', err));
+                });
+            }
+        };
+
+        initPlayer();
+
+        return () => {
+            if (hls) {
+                hls.destroy();
+            }
+        };
     }, [classStatus, videoUrl]);
 
     // Prevent forward seeking to simulate live experience
@@ -292,13 +305,34 @@ const LiveClassroomContent = () => {
                                         className="absolute inset-0 w-full h-full object-contain"
                                         playsInline
                                         autoPlay
+                                        muted // Muted helps with autoplay in many browsers
                                         controlsList="nodownload noplaybackrate"
                                     />
-                                    <div className="absolute top-4 left-4 z-10">
+                                    <div className="absolute top-4 left-4 z-20">
                                         <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-red-500/90 backdrop-blur-sm rounded-full text-white text-xs font-bold uppercase tracking-wider animate-pulse">
                                             <span className="w-2 h-2 rounded-full bg-white animate-ping"></span>
                                             Live Now
                                         </div>
+                                    </div>
+                                    {/* Troubleshooting overlay - visible if user hovers or if video not playing */}
+                                    <div className="absolute bottom-16 right-4 z-20 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <button
+                                            onClick={() => {
+                                                if (videoRef.current) {
+                                                    videoRef.current.muted = false;
+                                                    videoRef.current.play();
+                                                }
+                                            }}
+                                            className="bg-white/10 hover:bg-white/20 backdrop-blur-md text-white text-[10px] font-bold py-2 px-4 rounded-lg border border-white/20 transition-all"
+                                        >
+                                            🔊 Unmute & Play
+                                        </button>
+                                        <button
+                                            onClick={() => window.location.reload()}
+                                            className="bg-white/10 hover:bg-white/20 backdrop-blur-md text-white text-[10px] font-bold py-2 px-4 rounded-lg border border-white/20 transition-all"
+                                        >
+                                            🔄 Refresh Player
+                                        </button>
                                     </div>
                                 </>
                             )}
