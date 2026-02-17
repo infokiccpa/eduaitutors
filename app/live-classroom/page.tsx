@@ -12,6 +12,7 @@ const LiveClassroomContent = () => {
     const [accessGranted, setAccessGranted] = useState<boolean | null>(null);
     const [currentUser, setCurrentUser] = useState<any>(null);
     const videoRef = useRef<HTMLVideoElement>(null);
+    const [useNativeOnly, setUseNativeOnly] = useState(false);
     const hlsRef = useRef<Hls | null>(null);
     const [playerLoading, setPlayerLoading] = useState(true);
     const [playerError, setPlayerError] = useState<string | null>(null);
@@ -38,7 +39,19 @@ const LiveClassroomContent = () => {
         }
     }, [rawVideoUrl]);
 
-    const startTime = searchParams.get('startTime') || '2026-02-17T13:30:00+05:30';
+    const rawStartTime = searchParams.get('startTime') || '2026-02-17T13:30:00+05:30';
+    const startTime = React.useMemo(() => {
+        // Fix for ISO strings where '+' might be encoded as ' '
+        return rawStartTime.replace(' ', '+');
+    }, [rawStartTime]);
+
+    // Helper to get current elapsed seconds
+    const getElapsedSeconds = () => {
+        const now = new Date().getTime();
+        const start = new Date(startTime).getTime();
+        if (isNaN(start)) return 0;
+        return (now - start) / 1000;
+    };
 
     // Countdown Timer Logic
     useEffect(() => {
@@ -49,13 +62,11 @@ const LiveClassroomContent = () => {
                 const target = new Date(startTime).getTime();
 
                 if (isNaN(target)) {
-                    console.error('Invalid startTime format:', startTime);
                     setClassStatus('LIVE'); // Fallback if time is invalid
                     return;
                 }
 
                 const diff = target - now;
-                console.log(`Time to start: ${diff}ms | Target: ${new Date(target).toLocaleString()} | Now: ${new Date(now).toLocaleString()}`);
 
                 if (diff > 0) {
                     setClassStatus('UPCOMING');
@@ -70,7 +81,6 @@ const LiveClassroomContent = () => {
                     setTimeLeft(null);
                 }
             } catch (err) {
-                console.error('Error calculating time:', err);
                 setClassStatus('LIVE');
             }
         };
@@ -89,19 +99,30 @@ const LiveClassroomContent = () => {
         setPlayerLoading(true);
         setPlayerError(null);
 
-        const initPlayer = () => {
-            if (hls) {
-                hls.destroy();
+        const syncTimeToLive = () => {
+            const elapsed = getElapsedSeconds();
+            if (elapsed > 5 && elapsed < 21600) { // Within 6 hours
+                console.log(`🚀 Forcing Sync to ${elapsed}s`);
+                video.currentTime = elapsed;
+                video.play().catch(() => console.log('Autoplay blocked after sync'));
             }
+        };
 
-            if (Hls.isSupported()) {
+        const initPlayer = () => {
+            if (hls) hls.destroy();
+
+            // If user explicitly chose native or if Hls.js is not supported
+            if (!useNativeOnly && Hls.isSupported()) {
                 hls = new Hls({
                     debug: false,
                     enableWorker: true,
                     lowLatencyMode: true,
                     backBufferLength: 90,
-                    manifestLoadingMaxRetry: 4,
-                    levelLoadingMaxRetry: 4
+                    manifestLoadingMaxRetry: 10,
+                    levelLoadingMaxRetry: 10,
+                    xhrSetup: (xhr) => {
+                        xhr.withCredentials = false; // Important for some CORS setups
+                    }
                 });
 
                 hlsRef.current = hls;
@@ -114,94 +135,65 @@ const LiveClassroomContent = () => {
 
                 hls.on(Hls.Events.MANIFEST_PARSED, () => {
                     console.log('✅ HLS Manifest Parsed');
-                    video.play().catch(err => {
-                        console.log('Autoplay prevented, waiting for user interaction:', err);
-                    });
+                    setPlayerLoading(false);
+                    syncTimeToLive();
+                    video.play().catch(() => console.log('Autoplay blocked'));
                 });
 
                 hls.on(Hls.Events.LEVEL_LOADED, (event, data) => {
                     setPlayerLoading(false);
-                    // Catch up to live time logic - safer to do here than manifest parsed
-                    if (data.details.live) {
-                        console.log('✨ Live edge detected');
-                    } else {
-                        const now = new Date().getTime();
-                        const start = new Date(startTime).getTime();
-                        const elapsedSeconds = (now - start) / 1000;
-
-                        // Only seek if elapsed is reasonable (e.g. within 6 hours)
-                        if (elapsedSeconds > 10 && elapsedSeconds < 21600 && video.currentTime < elapsedSeconds - 5) {
-                            console.log(`🕒 Catching up: seeking to ${elapsedSeconds}s`);
-                            video.currentTime = elapsedSeconds;
-                        }
+                    // Double check sync on every level load
+                    const elapsed = getElapsedSeconds();
+                    if (elapsed > 10 && Math.abs(video.currentTime - elapsed) > 10) {
+                        video.currentTime = elapsed;
+                        video.play().catch(() => console.log('Autoplay blocked after level load sync'));
                     }
                 });
 
                 hls.on(Hls.Events.ERROR, (event, data) => {
                     console.error('❌ HLS Error:', data);
                     if (data.fatal) {
-                        let errorMsg = `Playback Error: ${data.details}`;
-
                         if (data.details === 'manifestLoadError') {
-                            errorMsg = "Connecting via secure backup engine...";
-                            setPlayerError(errorMsg);
-
-                            // Try native fallback as a last resort
-                            if (video.canPlayType('application/vnd.apple.mpegurl')) {
-                                console.log('🔄 manifestLoadError: Trying native fallback');
-                                hls?.destroy();
-                                video.src = videoUrl;
-                                return;
-                            }
-
-                            errorMsg = "System Error: The video stream is being blocked by the server or your network (CORS/Network Error). Please contact support.";
-                        } else if (data.details === 'manifestParsingError') {
-                            errorMsg = "System Error: The video stream format is invalid.";
-                        } else if (data.details === 'bufferStalledError') {
-                            errorMsg = "Your internet connection is too slow to keep up with the live stream.";
+                            // Automatically try native fallback on CORS error
+                            console.log('🔄 CORS detected - switching to native player...');
+                            setUseNativeOnly(true);
+                            return;
                         }
 
-                        setPlayerError(errorMsg);
-
-                        switch (data.type) {
-                            case Hls.ErrorTypes.NETWORK_ERROR:
-                                console.log('Network error, trying to recover in 3s...');
-                                setTimeout(() => hls?.startLoad(), 3000);
-                                break;
-                            case Hls.ErrorTypes.MEDIA_ERROR:
-                                console.log('Media error, trying to recover...');
-                                hls?.recoverMediaError();
-                                break;
-                            default:
-                                console.error('Fatal error, cannot recover automatically');
-                                break;
+                        setPlayerError(`Streaming Error: ${data.details}. Try the button below.`);
+                        if (data.type === Hls.ErrorTypes.NETWORK_ERROR) {
+                            setTimeout(() => hls?.startLoad(), 2000);
+                        } else if (data.type === Hls.ErrorTypes.MEDIA_ERROR) {
+                            hls?.recoverMediaError();
                         }
                     }
                 });
-            } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-                // For Safari/iOS native HLS support
+            } else {
+                // Native Player Fallback
+                console.log('🎬 Using Native Player Engine');
                 video.src = videoUrl;
-                video.addEventListener('loadedmetadata', () => {
-                    console.log('✅ Native HLS Ready');
+
+                const handleMetadata = () => {
                     setPlayerLoading(false);
+                    syncTimeToLive();
+                    video.play().catch(e => console.log('Native playback blocked:', e));
+                };
 
-                    const now = new Date().getTime();
-                    const start = new Date(startTime).getTime();
-                    const elapsedSeconds = (now - start) / 1000;
-                    if (elapsedSeconds > 10 && elapsedSeconds < 21600) {
-                        video.currentTime = elapsedSeconds;
-                    }
+                const handleError = () => {
+                    setPlayerError("Direct playback failed. This browser may not support HLS. Please try Chrome or Safari.");
+                };
 
-                    video.play().catch(err => console.log('Autoplay blocked:', err));
-                });
+                video.addEventListener('loadedmetadata', handleMetadata);
+                video.addEventListener('error', handleError);
 
-                video.addEventListener('error', (e) => {
-                    setPlayerError("Video playback error. Please try another browser.");
-                });
+                return () => {
+                    video.removeEventListener('loadedmetadata', handleMetadata);
+                    video.removeEventListener('error', handleError);
+                };
             }
         };
 
-        const timeoutId = setTimeout(initPlayer, 500); // Small delay to ensure ref stability
+        const timeoutId = setTimeout(initPlayer, 300);
 
         return () => {
             clearTimeout(timeoutId);
@@ -209,7 +201,7 @@ const LiveClassroomContent = () => {
                 hls.destroy();
             }
         };
-    }, [classStatus, videoUrl, retryCount]);
+    }, [classStatus, videoUrl, retryCount, useNativeOnly]);
 
     // Prevent forward seeking to simulate live experience
     useEffect(() => {
@@ -394,57 +386,93 @@ const LiveClassroomContent = () => {
                                 <>
                                     <video
                                         ref={videoRef}
-                                        controls
                                         className="absolute inset-0 w-full h-full object-contain"
                                         playsInline
                                         autoPlay
-                                        muted // Muted helps with autoplay in many browsers
+                                        muted
+                                        controls
                                         controlsList="nodownload noplaybackrate"
                                     />
 
+                                    {/* Play Overlay if video is paused and not loading */}
+                                    {!playerLoading && !playerError && (
+                                        <div
+                                            onClick={() => {
+                                                if (videoRef.current) {
+                                                    videoRef.current.muted = false;
+                                                    videoRef.current.play();
+                                                    const elapsed = getElapsedSeconds();
+                                                    if (elapsed > 0) videoRef.current.currentTime = elapsed;
+                                                }
+                                            }}
+                                            className="absolute inset-0 z-30 flex items-center justify-center cursor-pointer group/play"
+                                        >
+                                            <div className="w-24 h-24 bg-orange-500 rounded-full flex items-center justify-center shadow-[0_0_50px_rgba(249,115,22,0.5)] transform group-hover/play:scale-110 transition-all duration-300">
+                                                <Play className="w-10 h-10 text-white fill-current" />
+                                            </div>
+                                            <div className="absolute bottom-1/4 text-white font-black text-xl uppercase tracking-widest animate-bounce">
+                                                Click to Join Live
+                                            </div>
+                                        </div>
+                                    )}
+
                                     {/* Player Overlays */}
                                     {playerLoading && (
-                                        <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/80 z-10">
+                                        <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/80 z-40">
                                             <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-orange-500 mb-4"></div>
-                                            <p className="text-slate-400 font-bold animate-pulse">Connecting to live stream...</p>
+                                            <p className="text-slate-400 font-bold animate-pulse uppercase tracking-widest text-xs">Initializing Live Stream...</p>
                                         </div>
                                     )}
 
                                     {playerError && (
-                                        <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/90 z-10 p-6 text-center">
+                                        <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/95 z-40 p-6 text-center">
                                             <AlertCircle className="w-12 h-12 text-red-500 mb-4" />
-                                            <p className="text-white font-bold mb-4">{playerError}</p>
-                                            <button
-                                                onClick={() => setRetryCount(prev => prev + 1)}
-                                                className="bg-orange-600 hover:bg-orange-700 text-white px-6 py-2 rounded-full font-bold transition-all"
-                                            >
-                                                Try Connecting Again
-                                            </button>
+                                            <p className="text-white font-black text-lg mb-6 max-w-md">{playerError}</p>
+                                            <div className="flex flex-col gap-3 w-full max-w-xs">
+                                                <button
+                                                    onClick={() => setRetryCount(prev => prev + 1)}
+                                                    className="bg-orange-600 hover:bg-orange-700 text-white px-6 py-4 rounded-2xl font-black uppercase tracking-widest transition-all shadow-xl shadow-orange-600/20"
+                                                >
+                                                    Retry Connection
+                                                </button>
+                                                {!useNativeOnly && (
+                                                    <button
+                                                        onClick={() => setUseNativeOnly(true)}
+                                                        className="bg-slate-800 hover:bg-slate-700 text-white px-6 py-4 rounded-2xl font-black uppercase tracking-widest transition-all border border-slate-700"
+                                                    >
+                                                        Use Direct Mode
+                                                    </button>
+                                                )}
+                                                <button
+                                                    onClick={() => window.location.reload()}
+                                                    className="text-slate-500 hover:text-white text-xs font-black uppercase tracking-widest transition-colors mt-4"
+                                                >
+                                                    Refresh Page
+                                                </button>
+                                            </div>
                                         </div>
                                     )}
 
                                     <div className="absolute top-4 left-4 z-20">
-                                        <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-red-500/90 backdrop-blur-sm rounded-full text-white text-xs font-bold uppercase tracking-wider animate-pulse">
+                                        <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-red-500/90 backdrop-blur-sm rounded-full text-white text-[10px] font-black uppercase tracking-widest animate-pulse">
                                             <span className="w-2 h-2 rounded-full bg-white animate-ping"></span>
-                                            Live Now
+                                            Live Session
                                         </div>
                                     </div>
 
-                                    {/* Troubleshooting overlay - visible if user hovers or if video not playing */}
-                                    <div className="absolute bottom-16 right-4 z-20 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    {/* Controls overlay - Desktop hover */}
+                                    <div className="absolute bottom-10 right-10 z-50 flex flex-col gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
                                         <button
                                             onClick={() => {
                                                 if (videoRef.current) {
-                                                    const now = new Date().getTime();
-                                                    const start = new Date(startTime).getTime();
-                                                    const elapsed = (now - start) / 1000;
+                                                    const elapsed = getElapsedSeconds();
                                                     videoRef.current.currentTime = elapsed;
                                                     videoRef.current.play();
                                                 }
                                             }}
-                                            className="bg-orange-500 hover:bg-orange-600 text-white text-[10px] font-bold py-2.5 px-5 rounded-xl shadow-[0_4px_15px_rgba(249,115,22,0.4)] border border-orange-400 transition-all flex items-center gap-2"
+                                            className="bg-orange-500 hover:bg-orange-400 text-white text-[10px] font-black py-4 px-8 rounded-2xl shadow-2xl shadow-orange-500/30 transition-all flex items-center gap-3 uppercase tracking-widest active:scale-95"
                                         >
-                                            🚀 Sync to Live Moment
+                                            🚀 Catch Up to Live
                                         </button>
                                         <button
                                             onClick={() => {
@@ -453,15 +481,9 @@ const LiveClassroomContent = () => {
                                                     videoRef.current.play();
                                                 }
                                             }}
-                                            className="bg-white/90 text-slate-900 text-[10px] font-bold py-2.5 px-5 rounded-xl shadow-lg transition-all"
+                                            className="bg-white text-slate-900 text-[10px] font-black py-4 px-8 rounded-2xl shadow-2xl transition-all uppercase tracking-widest active:scale-95"
                                         >
-                                            🔊 Unmute & Play
-                                        </button>
-                                        <button
-                                            onClick={() => window.location.reload()}
-                                            className="bg-white/10 hover:bg-white/20 backdrop-blur-md text-white text-[10px] font-bold py-2 px-4 rounded-lg border border-white/20 transition-all"
-                                        >
-                                            🔄 Refresh Entire Page
+                                            🔊 Unmute Audio
                                         </button>
                                     </div>
                                 </>
