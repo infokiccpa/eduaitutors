@@ -46,39 +46,60 @@ export async function POST(req: Request) {
         const lead = await Lead.create(body);
         console.log('Lead created successfully:', lead._id);
 
-        // Send welcome email to user (fire and forget)
-        sendWelcomeEmail(lead.email, lead.name).catch(err =>
-            console.error('Welcome email failed:', err)
-        );
+        // Send welcome email to user
+        try {
+            await sendWelcomeEmail(lead.email, lead.name);
+        } catch (err) {
+            console.error('Welcome email failed:', err);
+        }
 
-        // Send notification to admin (fire and forget)
-        sendLeadNotificationToAdmin(lead).catch(err =>
-            console.error('Email notification failed:', err)
-        );
+        // Send notification to admin
+        try {
+            await sendLeadNotificationToAdmin(lead);
+        } catch (err) {
+            console.error('Email notification failed:', err);
+        }
 
         // Send Live Class Link if applicable
-        if (body.courseInterest && body.courseInterest.includes('Revision')) {
+        const isRevisionBatch = body.courseInterest && body.courseInterest.includes('Revision');
+        console.log('Checking for Live Class Link:', { isRevisionBatch, interest: body.courseInterest });
+
+        if (isRevisionBatch) {
             // Determine video URL and start time based on grade and subject
             let videoUrl: string | undefined;
             let startTime: string | undefined;
 
+            // Normalize subjects for robust comparison
+            const subjectsArray = Array.isArray(lead.subjects) ? lead.subjects : [];
+            const upperSubjects = subjectsArray.map((s: string) => s.toUpperCase());
+
             // Grade 12 Physics - HLS Stream
-            if (lead.grade === 'Grade 12' && lead.subjects && lead.subjects.includes('PHYSICS')) {
+            if (lead.grade === 'Grade 12' && upperSubjects.includes('PHYSICS')) {
                 videoUrl = 'https://d36f5jgespoy2j.cloudfront.net/12%20phy%20edit_720.m3u8';
                 startTime = '2026-02-17T13:30:00+05:30'; // Feb 17, 1:30 PM IST
             }
 
-            sendLiveClassLinkEmail(
-                lead.email,
-                lead.name,
-                lead.grade,
-                lead.subjects || [],
-                accessCode,
-                videoUrl,
-                startTime
-            ).catch(err =>
-                console.error('Live class email failed:', err)
-            );
+            console.log('Sending live class email with details:', {
+                to: lead.email,
+                grade: lead.grade,
+                subjects: subjectsArray,
+                hasVideo: !!videoUrl
+            });
+
+            try {
+                await sendLiveClassLinkEmail(
+                    lead.email,
+                    lead.name,
+                    lead.grade,
+                    subjectsArray,
+                    accessCode,
+                    videoUrl,
+                    startTime
+                );
+                console.log('✅ Live class email sent successfully');
+            } catch (err) {
+                console.error('❌ Live class email failed:', err);
+            }
         }
 
         return NextResponse.json(lead, { status: 201 });
