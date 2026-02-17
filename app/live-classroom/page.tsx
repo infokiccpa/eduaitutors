@@ -23,8 +23,22 @@ const LiveClassroomContent = () => {
     // Get class details from URL params
     const subject = searchParams.get('subject') || 'Physics';
     const grade = searchParams.get('grade') || 'Grade 12';
-    const videoUrl = searchParams.get('videoUrl') || 'https://d36f5jgespoy2j.cloudfront.net/12%20phy%20edit_720.m3u8';
-    const startTime = searchParams.get('startTime') || '2026-02-17T13:30:00+05:30'; // Default to Physics class time
+    const rawVideoUrl = searchParams.get('videoUrl') || 'https://d36f5jgespoy2j.cloudfront.net/12%20phy%20edit_720.m3u8';
+
+    // Normalize URL to handle spaces and special characters correctly
+    const videoUrl = React.useMemo(() => {
+        try {
+            // First decode to handle any double-encoding from search params
+            const decoded = decodeURIComponent(rawVideoUrl);
+            // Then ensure it's a valid URL object and return the string version
+            // which will have proper encoding for HLS.js
+            return new URL(decoded).toString();
+        } catch (e) {
+            return rawVideoUrl;
+        }
+    }, [rawVideoUrl]);
+
+    const startTime = searchParams.get('startTime') || '2026-02-17T13:30:00+05:30';
 
     // Countdown Timer Logic
     useEffect(() => {
@@ -126,11 +140,33 @@ const LiveClassroomContent = () => {
                 hls.on(Hls.Events.ERROR, (event, data) => {
                     console.error('❌ HLS Error:', data);
                     if (data.fatal) {
-                        setPlayerError(`Stream Error: ${data.details}`);
+                        let errorMsg = `Playback Error: ${data.details}`;
+
+                        if (data.details === 'manifestLoadError') {
+                            errorMsg = "Connecting via secure backup engine...";
+                            setPlayerError(errorMsg);
+
+                            // Try native fallback as a last resort
+                            if (video.canPlayType('application/vnd.apple.mpegurl')) {
+                                console.log('🔄 manifestLoadError: Trying native fallback');
+                                hls?.destroy();
+                                video.src = videoUrl;
+                                return;
+                            }
+
+                            errorMsg = "System Error: The video stream is being blocked by the server or your network (CORS/Network Error). Please contact support.";
+                        } else if (data.details === 'manifestParsingError') {
+                            errorMsg = "System Error: The video stream format is invalid.";
+                        } else if (data.details === 'bufferStalledError') {
+                            errorMsg = "Your internet connection is too slow to keep up with the live stream.";
+                        }
+
+                        setPlayerError(errorMsg);
+
                         switch (data.type) {
                             case Hls.ErrorTypes.NETWORK_ERROR:
-                                console.log('Network error, trying to recover...');
-                                hls?.startLoad();
+                                console.log('Network error, trying to recover in 3s...');
+                                setTimeout(() => hls?.startLoad(), 3000);
                                 break;
                             case Hls.ErrorTypes.MEDIA_ERROR:
                                 console.log('Media error, trying to recover...');
@@ -138,7 +174,6 @@ const LiveClassroomContent = () => {
                                 break;
                             default:
                                 console.error('Fatal error, cannot recover automatically');
-                                setPlayerError("Stream connection failed. Please refresh.");
                                 break;
                         }
                     }
