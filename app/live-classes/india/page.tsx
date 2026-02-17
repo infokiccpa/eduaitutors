@@ -192,7 +192,7 @@ const IndiaRevisionPage = () => {
     ]
 
     const grade12Classes = [
-        { grade: 'Grade 12', subject: 'PHYSICS', date: '17-18 FEBRUARY', time: '1:30 PM - 5:30 PM & 5:30 AM - 10:30 AM', startDate: '2026-02-17T13:30:00+05:30', color: 'bg-pink-600', image: '/india/Grade-12 Physics.png' },
+        { grade: 'Grade 12', subject: 'PHYSICS', date: '17-18 FEBRUARY', time: '1:30 PM - 5:30 PM & 5:30 AM - 10:30 AM', startDate: '2026-02-17T13:30:00+05:30', color: 'bg-pink-600', image: '/india/Grade-12 Physics.png', videoUrl: 'https://d36f5jgespoy2j.cloudfront.net/12%20phy%20edit_720.m3u8' },
         { grade: 'Grade 12', subject: 'BIOLOGY', date: '21-22 MARCH', time: '4 PM - 8 PM & 8 AM - 1 PM', startDate: '2026-03-21T16:00:00+05:30', color: 'bg-emerald-600', image: '/india/Grade12-Biology.png' },
         { grade: 'Grade 12', subject: 'MATHEMATICS', date: '28 FEB - 1 MAR', time: '4 PM - 8 PM & 8 AM - 1 PM', startDate: '2026-02-28T16:00:00+05:30', color: 'bg-purple-600', image: '/india/Grade12-Maths.png' },
         { grade: 'Grade 12', subject: 'CHEMISTRY', date: '21-24 FEBRUARY', time: '4 PM - 8 PM & 8 AM - 1 PM', startDate: '2026-02-21T16:00:00+05:30', color: 'bg-teal-600', image: '/india/Grade12-Chemistry.png' }
@@ -555,8 +555,16 @@ const IndiaRevisionPage = () => {
                                                 disabled
                                                 className="w-full py-2 bg-slate-100 text-slate-400 rounded-lg font-bold uppercase text-[9px] tracking-wider cursor-not-allowed flex items-center justify-center gap-2 border border-slate-200"
                                             >
-                                                Registration Closed
+                                                Class Ended
                                             </button>
+                                        ) : new Date().getTime() >= new Date(cls.startDate).getTime() ? (
+                                            <a
+                                                href={`/live-classroom?public=true&videoUrl=${cls.videoUrl || ''}&startTime=${cls.startDate}&subject=${cls.subject}&grade=${cls.grade}`}
+                                                className="w-full py-2 bg-red-600 text-white rounded-lg font-bold uppercase text-[9px] tracking-wider hover:bg-red-700 transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2 animate-pulse"
+                                            >
+                                                <span className="w-2 h-2 rounded-full bg-white animate-ping" />
+                                                Join Live Class
+                                            </a>
                                         ) : (
                                             <button
                                                 onClick={() => handleClassSelect('Grade 12')}

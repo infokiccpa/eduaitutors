@@ -16,6 +16,18 @@ const LiveClassroomContent = () => {
     // Verify Token
     useEffect(() => {
         const verifyToken = async () => {
+            const isPublic = searchParams.get('public') === 'true';
+
+            if (isPublic) {
+                setAccessGranted(true);
+                setCurrentUser({
+                    name: 'Guest Student',
+                    grade: searchParams.get('grade') || 'Grade 12',
+                    subject: searchParams.get('subject') || 'Physics'
+                });
+                return;
+            }
+
             if (!token) {
                 setAccessGranted(false);
                 return;
@@ -38,7 +50,7 @@ const LiveClassroomContent = () => {
         };
 
         verifyToken();
-    }, [token]);
+    }, [token, searchParams]);
 
     const subject = currentUser?.subject || searchParams.get('subject') || 'General';
     const grade = currentUser?.grade || searchParams.get('grade') || 'Grade 10';
