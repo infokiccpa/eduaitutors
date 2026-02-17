@@ -34,6 +34,7 @@ export async function GET(req: Request) {
             valid: true,
             user: {
                 name: lead.name,
+                email: lead.email,
                 grade: lead.grade,
                 subject: lead.subjects ? lead.subjects[0] : null
             }

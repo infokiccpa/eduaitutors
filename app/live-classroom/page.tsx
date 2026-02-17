@@ -283,6 +283,30 @@ const LiveClassroomContent = () => {
         verifyToken();
     }, [token, searchParams, grade, subject]);
 
+    // Track Attendance
+    useEffect(() => {
+        const recordAttendance = async () => {
+            if (accessGranted && currentUser && currentUser.email) {
+                try {
+                    await fetch('/api/live/track-join', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            name: currentUser.name,
+                            email: currentUser.email,
+                            grade: currentUser.grade || grade,
+                            subject: currentUser.subject || subject
+                        })
+                    });
+                } catch (err) {
+                    console.error('Failed to log attendance:', err);
+                }
+            }
+        };
+
+        recordAttendance();
+    }, [accessGranted, currentUser, grade, subject]);
+
     const videoId = searchParams.get('videoId') || 'dQw4w9WgXcQ'; // Default mock ID
 
     if (accessGranted === null) {
