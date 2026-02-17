@@ -84,8 +84,11 @@ const LiveClassroomContent = () => {
                 });
 
                 hlsRef.current = hls;
-                hls.loadSource(videoUrl);
                 hls.attachMedia(video);
+                hls.on(Hls.Events.MEDIA_ATTACHED, () => {
+                    console.log('✅ HLS Media Attached - Loading Source');
+                    hls?.loadSource(videoUrl);
+                });
 
                 hls.on(Hls.Events.MANIFEST_PARSED, () => {
                     console.log('✅ HLS stream loaded successfully');
@@ -239,7 +242,7 @@ const LiveClassroomContent = () => {
             `}</style>
             <PublicHeader />
 
-            <div className="pt-56 pb-4 max-w-[2200px] mx-auto px-4 md:px-6 min-h-screen flex flex-col">
+            <div className="pt-40 md:pt-48 pb-10 max-w-[2200px] mx-auto px-4 md:px-6 min-h-screen flex flex-col">
                 {/* Header Info */}
                 <div className="mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                     <div>
@@ -260,10 +263,10 @@ const LiveClassroomContent = () => {
                     </div>
                 </div>
 
-                <div className="w-full h-full min-h-0">
+                <div className="flex-1 w-full min-h-[500px]">
                     {/* Video Player Section */}
                     <div className="w-full h-full flex flex-col gap-4">
-                        <div className="relative w-full h-[600px] md:h-full max-h-[92vh] bg-black rounded-3xl overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.5)] border border-slate-800 group">
+                        <div className="relative w-full h-[500px] md:h-[75vh] min-h-[400px] bg-black rounded-3xl overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.5)] border border-slate-800 group">
                             {/* Countdown Timer - Show before class starts */}
                             {classStatus === 'UPCOMING' && timeLeft && (
                                 <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 z-50 p-6 text-center">
