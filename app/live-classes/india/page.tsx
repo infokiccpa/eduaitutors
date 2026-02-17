@@ -450,7 +450,6 @@ const IndiaRevisionPage = () => {
                             </div>
                         </div>
                         <div className="flex flex-wrap justify-center gap-6">
-                            {/* @ts-ignore */}
                             {grade10Classes.map((cls, idx) => (
                                 <motion.div
                                     key={idx}
@@ -496,7 +495,7 @@ const IndiaRevisionPage = () => {
                                             </button>
                                         ) : currentTime >= new Date(cls.startDate).getTime() ? (
                                             <a
-                                                href={`/live-classroom?public=true&videoUrl=${cls.videoUrl || ''}&startTime=${cls.startDate}&subject=${cls.subject}&grade=${cls.grade}`}
+                                                href={`/live-classroom?public=true&videoUrl=${(cls as any).videoUrl || ''}&startTime=${cls.startDate}&subject=${cls.subject}&grade=${cls.grade}`}
                                                 className="w-full py-2 bg-red-600 text-white rounded-lg font-bold uppercase text-[9px] tracking-wider hover:bg-red-700 transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2 animate-pulse"
                                             >
                                                 <span className="w-2 h-2 rounded-full bg-white animate-ping" />
@@ -575,7 +574,7 @@ const IndiaRevisionPage = () => {
                                             </button>
                                         ) : currentTime >= new Date(cls.startDate).getTime() ? (
                                             <a
-                                                href={`/live-classroom?public=true&videoUrl=${cls.videoUrl || ''}&startTime=${cls.startDate}&subject=${cls.subject}&grade=${cls.grade}`}
+                                                href={`/live-classroom?public=true&videoUrl=${(cls as any).videoUrl || ''}&startTime=${cls.startDate}&subject=${cls.subject}&grade=${cls.grade}`}
                                                 className="w-full py-2 bg-red-600 text-white rounded-lg font-bold uppercase text-[9px] tracking-wider hover:bg-red-700 transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2 animate-pulse"
                                             >
                                                 <span className="w-2 h-2 rounded-full bg-white animate-ping" />
