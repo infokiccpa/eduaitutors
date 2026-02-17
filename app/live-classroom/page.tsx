@@ -394,28 +394,6 @@ const LiveClassroomContent = () => {
                                         controlsList="nodownload noplaybackrate"
                                     />
 
-                                    {/* Play Overlay if video is paused and not loading */}
-                                    {!playerLoading && !playerError && (
-                                        <div
-                                            onClick={() => {
-                                                if (videoRef.current) {
-                                                    videoRef.current.muted = false;
-                                                    videoRef.current.play();
-                                                    const elapsed = getElapsedSeconds();
-                                                    if (elapsed > 0) videoRef.current.currentTime = elapsed;
-                                                }
-                                            }}
-                                            className="absolute inset-0 z-30 flex items-center justify-center cursor-pointer group/play"
-                                        >
-                                            <div className="w-24 h-24 bg-orange-500 rounded-full flex items-center justify-center shadow-[0_0_50px_rgba(249,115,22,0.5)] transform group-hover/play:scale-110 transition-all duration-300">
-                                                <Play className="w-10 h-10 text-white fill-current" />
-                                            </div>
-                                            <div className="absolute bottom-1/4 text-white font-black text-xl uppercase tracking-widest animate-bounce">
-                                                Click to Join Live
-                                            </div>
-                                        </div>
-                                    )}
-
                                     {/* Player Overlays */}
                                     {playerLoading && (
                                         <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/80 z-40">
