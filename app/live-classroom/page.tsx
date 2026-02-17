@@ -92,6 +92,17 @@ const LiveClassroomContent = () => {
 
                 hls.on(Hls.Events.MANIFEST_PARSED, () => {
                     console.log('✅ HLS stream loaded successfully');
+
+                    // Catch up to live time logic
+                    const now = new Date().getTime();
+                    const start = new Date(startTime).getTime();
+                    const elapsedSeconds = (now - start) / 1000;
+
+                    if (elapsedSeconds > 0) {
+                        console.log(`🕒 Catching up to live: seeking to ${elapsedSeconds}s`);
+                        video.currentTime = elapsedSeconds;
+                    }
+
                     video.play().catch(err => {
                         console.log('Autoplay prevented, waiting for user interaction:', err);
                     });
@@ -142,14 +153,27 @@ const LiveClassroomContent = () => {
         let lastTime = 0;
 
         const handleTimeUpdate = () => {
+            const now = new Date().getTime();
+            const start = new Date(startTime).getTime();
+            const liveElapsed = (now - start) / 1000;
+
             if (!video.seeking) {
                 lastTime = video.currentTime;
             }
+
+            // If user falls behind by more than 10 seconds (due to buffering or pause), 
+            // the 'Sync' UI will help them catch up.
+            // We mainly prevent them from seeking FORWARD past the current live moment.
         };
 
         const handleSeeking = () => {
-            if (video.currentTime > lastTime) {
-                video.currentTime = lastTime;
+            const now = new Date().getTime();
+            const start = new Date(startTime).getTime();
+            const liveElapsed = (now - start) / 1000;
+
+            if (video.currentTime > liveElapsed + 2) { // 2s buffer for clock drift
+                console.log('🚫 Seeking too far forward - snapping to live edge');
+                video.currentTime = liveElapsed;
             }
         };
 
@@ -319,6 +343,20 @@ const LiveClassroomContent = () => {
                                     </div>
                                     {/* Troubleshooting overlay - visible if user hovers or if video not playing */}
                                     <div className="absolute bottom-16 right-4 z-20 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <button
+                                            onClick={() => {
+                                                if (videoRef.current) {
+                                                    const now = new Date().getTime();
+                                                    const start = new Date(startTime).getTime();
+                                                    const elapsed = (now - start) / 1000;
+                                                    videoRef.current.currentTime = elapsed;
+                                                    videoRef.current.play();
+                                                }
+                                            }}
+                                            className="bg-orange-500 hover:bg-orange-600 text-white text-[10px] font-bold py-2 px-4 rounded-lg shadow-lg border border-orange-400 transition-all flex items-center gap-2"
+                                        >
+                                            🚀 Sync to Live
+                                        </button>
                                         <button
                                             onClick={() => {
                                                 if (videoRef.current) {
