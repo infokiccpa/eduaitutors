@@ -13,6 +13,9 @@ const LiveClassroomContent = () => {
     const [currentUser, setCurrentUser] = useState<any>(null);
     const videoRef = useRef<HTMLVideoElement>(null);
     const hlsRef = useRef<Hls | null>(null);
+    const [playerLoading, setPlayerLoading] = useState(true);
+    const [playerError, setPlayerError] = useState<string | null>(null);
+    const [retryCount, setRetryCount] = useState(0);
 
     const [timeLeft, setTimeLeft] = useState<{ d: number, h: number, m: number, s: number } | null>(null);
     const [classStatus, setClassStatus] = useState<'UPCOMING' | 'LIVE'>('UPCOMING');
@@ -69,6 +72,8 @@ const LiveClassroomContent = () => {
 
         const video = videoRef.current;
         let hls: Hls | null = null;
+        setPlayerLoading(true);
+        setPlayerError(null);
 
         const initPlayer = () => {
             if (hls) {
@@ -80,37 +85,48 @@ const LiveClassroomContent = () => {
                     debug: false,
                     enableWorker: true,
                     lowLatencyMode: true,
-                    backBufferLength: 90
+                    backBufferLength: 90,
+                    manifestLoadingMaxRetry: 4,
+                    levelLoadingMaxRetry: 4
                 });
 
                 hlsRef.current = hls;
                 hls.attachMedia(video);
+
                 hls.on(Hls.Events.MEDIA_ATTACHED, () => {
                     console.log('✅ HLS Media Attached - Loading Source');
                     hls?.loadSource(videoUrl);
                 });
 
                 hls.on(Hls.Events.MANIFEST_PARSED, () => {
-                    console.log('✅ HLS stream loaded successfully');
-
-                    // Catch up to live time logic
-                    const now = new Date().getTime();
-                    const start = new Date(startTime).getTime();
-                    const elapsedSeconds = (now - start) / 1000;
-
-                    if (elapsedSeconds > 0) {
-                        console.log(`🕒 Catching up to live: seeking to ${elapsedSeconds}s`);
-                        video.currentTime = elapsedSeconds;
-                    }
-
+                    console.log('✅ HLS Manifest Parsed');
                     video.play().catch(err => {
                         console.log('Autoplay prevented, waiting for user interaction:', err);
                     });
                 });
 
+                hls.on(Hls.Events.LEVEL_LOADED, (event, data) => {
+                    setPlayerLoading(false);
+                    // Catch up to live time logic - safer to do here than manifest parsed
+                    if (data.details.live) {
+                        console.log('✨ Live edge detected');
+                    } else {
+                        const now = new Date().getTime();
+                        const start = new Date(startTime).getTime();
+                        const elapsedSeconds = (now - start) / 1000;
+
+                        // Only seek if elapsed is reasonable (e.g. within 6 hours)
+                        if (elapsedSeconds > 10 && elapsedSeconds < 21600 && video.currentTime < elapsedSeconds - 5) {
+                            console.log(`🕒 Catching up: seeking to ${elapsedSeconds}s`);
+                            video.currentTime = elapsedSeconds;
+                        }
+                    }
+                });
+
                 hls.on(Hls.Events.ERROR, (event, data) => {
                     console.error('❌ HLS Error:', data);
                     if (data.fatal) {
+                        setPlayerError(`Stream Error: ${data.details}`);
                         switch (data.type) {
                             case Hls.ErrorTypes.NETWORK_ERROR:
                                 console.log('Network error, trying to recover...');
@@ -122,6 +138,7 @@ const LiveClassroomContent = () => {
                                 break;
                             default:
                                 console.error('Fatal error, cannot recover automatically');
+                                setPlayerError("Stream connection failed. Please refresh.");
                                 break;
                         }
                     }
@@ -130,20 +147,34 @@ const LiveClassroomContent = () => {
                 // For Safari/iOS native HLS support
                 video.src = videoUrl;
                 video.addEventListener('loadedmetadata', () => {
-                    console.log('✅ Video loaded (native HLS)');
-                    video.play().catch(err => console.log('Autoplay prevented:', err));
+                    console.log('✅ Native HLS Ready');
+                    setPlayerLoading(false);
+
+                    const now = new Date().getTime();
+                    const start = new Date(startTime).getTime();
+                    const elapsedSeconds = (now - start) / 1000;
+                    if (elapsedSeconds > 10 && elapsedSeconds < 21600) {
+                        video.currentTime = elapsedSeconds;
+                    }
+
+                    video.play().catch(err => console.log('Autoplay blocked:', err));
+                });
+
+                video.addEventListener('error', (e) => {
+                    setPlayerError("Video playback error. Please try another browser.");
                 });
             }
         };
 
-        initPlayer();
+        const timeoutId = setTimeout(initPlayer, 500); // Small delay to ensure ref stability
 
         return () => {
+            clearTimeout(timeoutId);
             if (hls) {
                 hls.destroy();
             }
         };
-    }, [classStatus, videoUrl]);
+    }, [classStatus, videoUrl, retryCount]);
 
     // Prevent forward seeking to simulate live experience
     useEffect(() => {
@@ -335,12 +366,35 @@ const LiveClassroomContent = () => {
                                         muted // Muted helps with autoplay in many browsers
                                         controlsList="nodownload noplaybackrate"
                                     />
+
+                                    {/* Player Overlays */}
+                                    {playerLoading && (
+                                        <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/80 z-10">
+                                            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-orange-500 mb-4"></div>
+                                            <p className="text-slate-400 font-bold animate-pulse">Connecting to live stream...</p>
+                                        </div>
+                                    )}
+
+                                    {playerError && (
+                                        <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/90 z-10 p-6 text-center">
+                                            <AlertCircle className="w-12 h-12 text-red-500 mb-4" />
+                                            <p className="text-white font-bold mb-4">{playerError}</p>
+                                            <button
+                                                onClick={() => setRetryCount(prev => prev + 1)}
+                                                className="bg-orange-600 hover:bg-orange-700 text-white px-6 py-2 rounded-full font-bold transition-all"
+                                            >
+                                                Try Connecting Again
+                                            </button>
+                                        </div>
+                                    )}
+
                                     <div className="absolute top-4 left-4 z-20">
                                         <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-red-500/90 backdrop-blur-sm rounded-full text-white text-xs font-bold uppercase tracking-wider animate-pulse">
                                             <span className="w-2 h-2 rounded-full bg-white animate-ping"></span>
                                             Live Now
                                         </div>
                                     </div>
+
                                     {/* Troubleshooting overlay - visible if user hovers or if video not playing */}
                                     <div className="absolute bottom-16 right-4 z-20 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                         <button
@@ -353,9 +407,9 @@ const LiveClassroomContent = () => {
                                                     videoRef.current.play();
                                                 }
                                             }}
-                                            className="bg-orange-500 hover:bg-orange-600 text-white text-[10px] font-bold py-2 px-4 rounded-lg shadow-lg border border-orange-400 transition-all flex items-center gap-2"
+                                            className="bg-orange-500 hover:bg-orange-600 text-white text-[10px] font-bold py-2.5 px-5 rounded-xl shadow-[0_4px_15px_rgba(249,115,22,0.4)] border border-orange-400 transition-all flex items-center gap-2"
                                         >
-                                            🚀 Sync to Live
+                                            🚀 Sync to Live Moment
                                         </button>
                                         <button
                                             onClick={() => {
@@ -364,7 +418,7 @@ const LiveClassroomContent = () => {
                                                     videoRef.current.play();
                                                 }
                                             }}
-                                            className="bg-white/10 hover:bg-white/20 backdrop-blur-md text-white text-[10px] font-bold py-2 px-4 rounded-lg border border-white/20 transition-all"
+                                            className="bg-white/90 text-slate-900 text-[10px] font-bold py-2.5 px-5 rounded-xl shadow-lg transition-all"
                                         >
                                             🔊 Unmute & Play
                                         </button>
@@ -372,7 +426,7 @@ const LiveClassroomContent = () => {
                                             onClick={() => window.location.reload()}
                                             className="bg-white/10 hover:bg-white/20 backdrop-blur-md text-white text-[10px] font-bold py-2 px-4 rounded-lg border border-white/20 transition-all"
                                         >
-                                            🔄 Refresh Player
+                                            🔄 Refresh Entire Page
                                         </button>
                                     </div>
                                 </>
