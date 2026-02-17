@@ -58,7 +58,25 @@ export async function POST(req: Request) {
 
         // Send Live Class Link if applicable
         if (body.courseInterest && body.courseInterest.includes('Revision')) {
-            sendLiveClassLinkEmail(lead.email, lead.name, lead.grade, lead.subjects || [], accessCode).catch(err =>
+            // Determine video URL and start time based on grade and subject
+            let videoUrl: string | undefined;
+            let startTime: string | undefined;
+
+            // Grade 12 Physics - HLS Stream
+            if (lead.grade === 'Grade 12' && lead.subjects && lead.subjects.includes('PHYSICS')) {
+                videoUrl = 'https://d36f5jgespoy2j.cloudfront.net/12%20phy%20edit_720.m3u8';
+                startTime = '2026-02-17T13:30:00+05:30'; // Feb 17, 1:30 PM IST
+            }
+
+            sendLiveClassLinkEmail(
+                lead.email,
+                lead.name,
+                lead.grade,
+                lead.subjects || [],
+                accessCode,
+                videoUrl,
+                startTime
+            ).catch(err =>
                 console.error('Live class email failed:', err)
             );
         }

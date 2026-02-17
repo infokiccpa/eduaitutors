@@ -1,17 +1,150 @@
 'use client';
 
-import React, { useState, useEffect, Suspense } from 'react';
+import React, { useState, useEffect, Suspense, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
 import PublicHeader from '@/components/PublicHeader';
-import PublicFooter from '@/components/PublicFooter';
-import { motion } from 'framer-motion';
-import { Play, MessageCircle, FileText, CheckCircle2, AlertCircle, Users } from 'lucide-react';
+import { Play, AlertCircle, Users, Clock } from 'lucide-react';
+import Hls from 'hls.js';
 
 const LiveClassroomContent = () => {
     const searchParams = useSearchParams();
     const token = searchParams.get('token');
     const [accessGranted, setAccessGranted] = useState<boolean | null>(null);
     const [currentUser, setCurrentUser] = useState<any>(null);
+    const videoRef = useRef<HTMLVideoElement>(null);
+    const hlsRef = useRef<Hls | null>(null);
+
+    const [timeLeft, setTimeLeft] = useState<{ d: number, h: number, m: number, s: number } | null>(null);
+    const [classStatus, setClassStatus] = useState<'UPCOMING' | 'LIVE'>('UPCOMING');
+
+    // Get class details from URL params
+    const subject = searchParams.get('subject') || 'Physics';
+    const grade = searchParams.get('grade') || 'Grade 12';
+    const videoUrl = searchParams.get('videoUrl') || 'https://d36f5jgespoy2j.cloudfront.net/12%20phy%20edit_720.m3u8';
+    const startTime = searchParams.get('startTime') || '2026-02-17T13:30:00+05:30'; // Default to Physics class time
+
+    // Countdown Timer Logic
+    useEffect(() => {
+        const calculateTime = () => {
+            try {
+                const now = new Date().getTime();
+                // Ensure the date string is parsed correctly across all browsers
+                const target = new Date(startTime).getTime();
+
+                if (isNaN(target)) {
+                    console.error('Invalid startTime format:', startTime);
+                    setClassStatus('LIVE'); // Fallback if time is invalid
+                    return;
+                }
+
+                const diff = target - now;
+                console.log(`Time to start: ${diff}ms | Target: ${new Date(target).toLocaleString()} | Now: ${new Date(now).toLocaleString()}`);
+
+                if (diff > 0) {
+                    setClassStatus('UPCOMING');
+                    setTimeLeft({
+                        d: Math.floor(diff / (1000 * 60 * 60 * 24)),
+                        h: Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
+                        m: Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60)),
+                        s: Math.floor((diff % (1000 * 60)) / 1000),
+                    });
+                } else {
+                    setClassStatus('LIVE');
+                    setTimeLeft(null);
+                }
+            } catch (err) {
+                console.error('Error calculating time:', err);
+                setClassStatus('LIVE');
+            }
+        };
+
+        calculateTime();
+        const timer = setInterval(calculateTime, 1000);
+        return () => clearInterval(timer);
+    }, [startTime]);
+
+    // HLS Video Player Setup
+    useEffect(() => {
+        if (classStatus !== 'LIVE' || !videoRef.current) return;
+
+        const video = videoRef.current;
+
+        if (Hls.isSupported()) {
+            const hls = new Hls({
+                debug: false,
+                enableWorker: true,
+                lowLatencyMode: true,
+                backBufferLength: 90
+            });
+
+            hlsRef.current = hls;
+            hls.loadSource(videoUrl);
+            hls.attachMedia(video);
+
+            hls.on(Hls.Events.MANIFEST_PARSED, () => {
+                console.log('✅ HLS stream loaded successfully');
+                video.play().catch(err => console.log('Autoplay prevented:', err));
+            });
+
+            hls.on(Hls.Events.ERROR, (event, data) => {
+                console.error('❌ HLS Error:', data);
+                if (data.fatal) {
+                    switch (data.type) {
+                        case Hls.ErrorTypes.NETWORK_ERROR:
+                            console.log('Network error, trying to recover...');
+                            hls.startLoad();
+                            break;
+                        case Hls.ErrorTypes.MEDIA_ERROR:
+                            console.log('Media error, trying to recover...');
+                            hls.recoverMediaError();
+                            break;
+                        default:
+                            hls.destroy();
+                            break;
+                    }
+                }
+            });
+
+            return () => {
+                hls.destroy();
+            };
+        } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+            // For Safari/iOS native HLS support
+            video.src = videoUrl;
+            video.addEventListener('loadedmetadata', () => {
+                console.log('✅ Video loaded (native HLS)');
+                video.play().catch(err => console.log('Autoplay prevented:', err));
+            });
+        }
+    }, [classStatus, videoUrl]);
+
+    // Prevent forward seeking to simulate live experience
+    useEffect(() => {
+        const video = videoRef.current;
+        if (!video || classStatus !== 'LIVE') return;
+
+        let lastTime = 0;
+
+        const handleTimeUpdate = () => {
+            if (!video.seeking) {
+                lastTime = video.currentTime;
+            }
+        };
+
+        const handleSeeking = () => {
+            if (video.currentTime > lastTime) {
+                video.currentTime = lastTime;
+            }
+        };
+
+        video.addEventListener('timeupdate', handleTimeUpdate);
+        video.addEventListener('seeking', handleSeeking);
+
+        return () => {
+            video.removeEventListener('timeupdate', handleTimeUpdate);
+            video.removeEventListener('seeking', handleSeeking);
+        };
+    }, [classStatus]);
 
     // Verify Token
     useEffect(() => {
@@ -22,8 +155,8 @@ const LiveClassroomContent = () => {
                 setAccessGranted(true);
                 setCurrentUser({
                     name: 'Guest Student',
-                    grade: searchParams.get('grade') || 'Grade 12',
-                    subject: searchParams.get('subject') || 'Physics'
+                    grade: grade,
+                    subject: subject
                 });
                 return;
             }
@@ -50,10 +183,8 @@ const LiveClassroomContent = () => {
         };
 
         verifyToken();
-    }, [token, searchParams]);
+    }, [token, searchParams, grade, subject]);
 
-    const subject = currentUser?.subject || searchParams.get('subject') || 'General';
-    const grade = currentUser?.grade || searchParams.get('grade') || 'Grade 10';
     const videoId = searchParams.get('videoId') || 'dQw4w9WgXcQ'; // Default mock ID
 
     if (accessGranted === null) {
@@ -79,139 +210,100 @@ const LiveClassroomContent = () => {
         );
     }
 
-    const [chatOpen, setChatOpen] = useState(true);
-    const [messages, setMessages] = useState([
-        { user: 'System', text: 'Welcome to the live class! Please keep the chat respectful.', time: 'Now', isSystem: true },
-        { user: 'Rahul', text: 'Good morning sir!', time: '10:00 AM' },
-        { user: 'Priya', text: 'Is this the revision class?', time: '10:01 AM' },
-    ]);
-    const [newMessage, setNewMessage] = useState('');
-
-    const handleSendMessage = (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!newMessage.trim()) return;
-        setMessages([...messages, { user: 'You', text: newMessage, time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }]);
-        setNewMessage('');
-    };
 
     return (
         <div className="min-h-screen bg-slate-900 text-white">
+            <style jsx global>{`
+                video::-webkit-media-controls-timeline {
+                    display: none !important;
+                }
+                video::-webkit-media-controls-current-time-display {
+                    display: none !important;
+                }
+                video::-webkit-media-controls-time-remaining-display {
+                    display: none !important;
+                }
+            `}</style>
             <PublicHeader />
 
-            <div className="pt-24 pb-8 max-w-[1600px] mx-auto px-4 md:px-6 h-[calc(100vh-80px)] flex flex-col">
+            <div className="pt-56 pb-4 max-w-[2200px] mx-auto px-4 md:px-6 min-h-screen flex flex-col">
                 {/* Header Info */}
                 <div className="mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                     <div>
-                        <div className="inline-flex items-center gap-2 px-3 py-1 bg-red-500/20 border border-red-500/50 rounded-full text-red-400 text-xs font-bold uppercase tracking-wider mb-2 animate-pulse">
-                            <span className="w-2 h-2 rounded-full bg-red-500"></span>
-                            Live Now
-                        </div>
+                        {classStatus === 'LIVE' ? (
+                            <div className="inline-flex items-center gap-2 px-3 py-1 bg-red-500/20 border border-red-500/50 rounded-full text-red-400 text-xs font-bold uppercase tracking-wider mb-2 animate-pulse">
+                                <span className="w-2 h-2 rounded-full bg-red-500"></span>
+                                Live Now
+                            </div>
+                        ) : (
+                            <div className="inline-flex items-center gap-2 px-3 py-1 bg-orange-500/20 border border-orange-500/50 rounded-full text-orange-400 text-xs font-bold uppercase tracking-wider mb-2">
+                                <Clock className="w-3 h-3" />
+                                Starting Soon
+                            </div>
+                        )}
                         <h1 className="text-2xl md:text-3xl font-black text-white">
                             {grade} {subject} - Final Revision
                         </h1>
                     </div>
-                    <div className="flex items-center gap-4">
-                        <div className="flex items-center gap-2 text-slate-400 text-sm font-medium">
-                            <Users className="w-4 h-4" />
-                            <span>1,245 Watching</span>
-                        </div>
-                        <button className="bg-orange-600 hover:bg-orange-700 text-white px-5 py-2 rounded-lg font-bold text-sm transition-colors">
-                            Ask a Doubt
-                        </button>
-                    </div>
                 </div>
 
-                {/* Main Content Grid */}
-                <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 flex-1 min-h-0">
+                <div className="w-full h-full min-h-0">
                     {/* Video Player Section */}
-                    <div className="lg:col-span-3 flex flex-col gap-4">
-                        <div className="relative w-full h-[300px] md:h-full max-h-[70vh] bg-black rounded-2xl overflow-hidden shadow-2xl border border-slate-700 group">
-                            {/* Placeholder Video Player (Using Iframe for demo) */}
-                            <iframe
-                                width="100%"
-                                height="100%"
-                                src={`https://www.youtube.com/embed/${videoId}?autoplay=1&mute=0&controls=1&showinfo=0&rel=0`}
-                                title="Live Class Video"
-                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                                allowFullScreen
-                                className="absolute inset-0 w-full h-full object-cover"
-                            ></iframe>
-                        </div>
-
-                        {/* Class Resources / Notes Tab */}
-                        <div className="bg-slate-800/50 rounded-xl p-6 border border-slate-700">
-                            <h3 className="text-lg font-bold mb-4 flex items-center gap-2 text-slate-200">
-                                <FileText className="w-5 h-5 text-orange-500" />
-                                Class Resources
-                            </h3>
-                            <div className="flex gap-4 overflow-x-auto pb-2">
-                                {[1, 2, 3].map((i) => (
-                                    <div key={i} className="flex-shrink-0 flex items-center gap-3 p-3 bg-slate-900 rounded-lg border border-slate-700 hover:border-orange-500 transition-colors cursor-pointer w-64">
-                                        <div className="w-10 h-10 bg-slate-800 rounded flex items-center justify-center text-slate-400">
-                                            <FileText className="w-5 h-5" />
-                                        </div>
-                                        <div>
-                                            <p className="text-sm font-bold text-slate-200">Chapter {i} Notes.pdf</p>
-                                            <p className="text-xs text-slate-500">2.4 MB • PDF</p>
-                                        </div>
+                    <div className="w-full h-full flex flex-col gap-4">
+                        <div className="relative w-full h-[600px] md:h-full max-h-[92vh] bg-black rounded-3xl overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.5)] border border-slate-800 group">
+                            {/* Countdown Timer - Show before class starts */}
+                            {classStatus === 'UPCOMING' && timeLeft && (
+                                <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 z-50 p-6 text-center">
+                                    <div className="w-20 h-20 bg-orange-500/10 rounded-full flex items-center justify-center mb-6 shadow-[0_0_30px_rgba(249,115,22,0.3)] border border-orange-500/30">
+                                        <Clock className="w-10 h-10 text-orange-500 animate-pulse" />
                                     </div>
-                                ))}
-                            </div>
-                        </div>
-                    </div>
+                                    <h2 className="text-3xl md:text-5xl font-black text-white mb-4 tracking-tight">Class will start shortly</h2>
+                                    <p className="text-slate-400 text-lg md:text-xl max-w-lg mb-12">Please stay on this page. The live stream will begin automatically when the timer reaches zero.</p>
 
-                    {/* Chat Section */}
-                    <div className={`lg:col-span-1 bg-slate-800/80 backdrop-blur-sm rounded-2xl border border-slate-700 flex flex-col overflow-hidden ${chatOpen ? 'h-[500px] lg:h-auto' : 'h-12'}`}>
-                        {/* Chat Header */}
-                        <div className="p-4 border-b border-slate-700 flex justify-between items-center bg-slate-800">
-                            <h3 className="font-bold text-slate-200 flex items-center gap-2">
-                                <MessageCircle className="w-5 h-5 text-orange-500" />
-                                Live Chat
-                            </h3>
-                            <button onClick={() => setChatOpen(!chatOpen)} className="text-slate-400 hover:text-white lg:hidden">
-                                {chatOpen ? 'Minimize' : 'Expand'}
-                            </button>
-                        </div>
-
-                        {/* Chat Messages */}
-                        <div className="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-thin scrollbar-thumb-slate-600 scrollbar-track-transparent">
-                            {messages.map((msg, idx) => (
-                                <div key={idx} className={`flex flex-col ${msg.user === 'You' ? 'items-end' : 'items-start'}`}>
-                                    <div className={`flex items-baseline gap-2 mb-1 ${msg.user === 'You' ? 'flex-row-reverse' : ''}`}>
-                                        <span className={`text-xs font-bold ${msg.isSystem ? 'text-blue-400' : 'text-orange-400'}`}>{msg.user}</span>
-                                        <span className="text-[10px] text-slate-500">{msg.time}</span>
+                                    <div className="flex flex-wrap justify-center gap-4 md:gap-8 mb-8">
+                                        {[
+                                            { label: 'Days', val: timeLeft.d },
+                                            { label: 'Hours', val: timeLeft.h },
+                                            { label: 'Minutes', val: timeLeft.m },
+                                            { label: 'Seconds', val: timeLeft.s }
+                                        ].map((item, i) => (
+                                            <div key={i} className="flex flex-col items-center">
+                                                <div className="w-20 h-20 md:w-28 md:h-28 bg-slate-800/80 border-2 border-orange-500/50 rounded-2xl flex items-center justify-center mb-3 shadow-[0_10px_20px_rgba(0,0,0,0.4)] backdrop-blur-md">
+                                                    <span className="text-3xl md:text-5xl font-black text-white font-mono">{item.val < 10 ? `0${item.val}` : item.val}</span>
+                                                </div>
+                                                <span className="text-[10px] md:text-xs font-bold text-orange-500/70 uppercase tracking-widest">{item.label}</span>
+                                            </div>
+                                        ))}
                                     </div>
-                                    <div className={`max-w-[85%] px-3 py-2 rounded-xl text-sm ${msg.isSystem
-                                        ? 'bg-blue-500/10 text-blue-300 border border-blue-500/20 w-full text-center'
-                                        : msg.user === 'You'
-                                            ? 'bg-orange-600 text-white rounded-tr-none'
-                                            : 'bg-slate-700 text-slate-200 rounded-tl-none'
-                                        }`}>
-                                        {msg.text}
+
+                                    <div className="mt-8 flex items-center gap-3 px-4 py-2 bg-slate-800/50 rounded-full border border-slate-700">
+                                        <div className="w-2 h-2 rounded-full bg-orange-500 animate-pulse"></div>
+                                        <span className="text-xs font-bold text-slate-300 uppercase tracking-widest">Waiting for session to start</span>
                                     </div>
                                 </div>
-                            ))}
-                        </div>
+                            )}
 
-                        {/* Chat Input */}
-                        <form onSubmit={handleSendMessage} className="p-4 border-t border-slate-700 bg-slate-800">
-                            <div className="relative">
-                                <input
-                                    type="text"
-                                    value={newMessage}
-                                    onChange={(e) => setNewMessage(e.target.value)}
-                                    placeholder="Type a message..."
-                                    className="w-full bg-slate-900 border border-slate-600 rounded-xl pl-4 pr-10 py-3 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition-all"
-                                />
-                                <button
-                                    type="submit"
-                                    className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 bg-orange-500 hover:bg-orange-600 rounded-lg text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                                    disabled={!newMessage.trim()}
-                                >
-                                    <Play className="w-3 h-3 fill-current" />
-                                </button>
-                            </div>
-                        </form>
+                            {/* HLS Video Player - Show when class is live */}
+                            {classStatus === 'LIVE' && (
+                                <>
+                                    <video
+                                        ref={videoRef}
+                                        controls
+                                        className="absolute inset-0 w-full h-full object-contain"
+                                        playsInline
+                                        autoPlay
+                                        controlsList="nodownload noplaybackrate"
+                                    />
+                                    <div className="absolute top-4 left-4 z-10">
+                                        <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-red-500/90 backdrop-blur-sm rounded-full text-white text-xs font-bold uppercase tracking-wider animate-pulse">
+                                            <span className="w-2 h-2 rounded-full bg-white animate-ping"></span>
+                                            Live Now
+                                        </div>
+                                    </div>
+                                </>
+                            )}
+
+                        </div>
                     </div>
                 </div>
             </div>

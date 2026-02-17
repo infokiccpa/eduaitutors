@@ -179,6 +179,14 @@ const IndiaRevisionPage = () => {
         phoneNumber: '',
         email: ''
     })
+    const [currentTime, setCurrentTime] = useState(new Date().getTime())
+
+    React.useEffect(() => {
+        const timer = setInterval(() => {
+            setCurrentTime(new Date().getTime())
+        }, 1000)
+        return () => clearInterval(timer)
+    }, [])
     const [emailOtpSent, setEmailOtpSent] = useState(false)
     const [emailVerified, setEmailVerified] = useState(false)
     const [emailOtp, setEmailOtp] = useState('')
@@ -327,7 +335,7 @@ const IndiaRevisionPage = () => {
                 })
             })
             if (res.ok) {
-                toast.success("🎉 Registration Successful! Thank you for registering. Get ready for an amazing learning experience! We'll send you the class link shortly.")
+                toast.success("🎉 Registration Successful! Thank you for registering. We'll send you the class link shortly.")
                 setFormData({ fullName: '', phoneNumber: '', email: '' })
                 setEmailVerified(false)
                 setEmailOtpSent(false)
@@ -479,13 +487,21 @@ const IndiaRevisionPage = () => {
                                             <CourseTimer targetDate={cls.startDate} />
                                         </div>
 
-                                        {new Date().getTime() > new Date(cls.startDate).getTime() + (4 * 60 * 60 * 1000) ? (
+                                        {currentTime > new Date(cls.startDate).getTime() + (4 * 60 * 60 * 1000) ? (
                                             <button
                                                 disabled
                                                 className="w-full py-2 bg-slate-100 text-slate-400 rounded-lg font-bold uppercase text-[9px] tracking-wider cursor-not-allowed flex items-center justify-center gap-2 border border-slate-200"
                                             >
                                                 Registration Closed
                                             </button>
+                                        ) : currentTime >= new Date(cls.startDate).getTime() ? (
+                                            <a
+                                                href={`/live-classroom?public=true&videoUrl=${cls.videoUrl || ''}&startTime=${cls.startDate}&subject=${cls.subject}&grade=${cls.grade}`}
+                                                className="w-full py-2 bg-red-600 text-white rounded-lg font-bold uppercase text-[9px] tracking-wider hover:bg-red-700 transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2 animate-pulse"
+                                            >
+                                                <span className="w-2 h-2 rounded-full bg-white animate-ping" />
+                                                JOIN NOW
+                                            </a>
                                         ) : (
                                             <button
                                                 onClick={() => handleClassSelect('Grade 10')}
@@ -550,20 +566,20 @@ const IndiaRevisionPage = () => {
                                             <CourseTimer targetDate={cls.startDate} />
                                         </div>
 
-                                        {new Date().getTime() > new Date(cls.startDate).getTime() + (4 * 60 * 60 * 1000) ? (
+                                        {currentTime > new Date(cls.startDate).getTime() + (4 * 60 * 60 * 1000) ? (
                                             <button
                                                 disabled
                                                 className="w-full py-2 bg-slate-100 text-slate-400 rounded-lg font-bold uppercase text-[9px] tracking-wider cursor-not-allowed flex items-center justify-center gap-2 border border-slate-200"
                                             >
                                                 Class Ended
                                             </button>
-                                        ) : new Date().getTime() >= new Date(cls.startDate).getTime() ? (
+                                        ) : currentTime >= new Date(cls.startDate).getTime() ? (
                                             <a
                                                 href={`/live-classroom?public=true&videoUrl=${cls.videoUrl || ''}&startTime=${cls.startDate}&subject=${cls.subject}&grade=${cls.grade}`}
                                                 className="w-full py-2 bg-red-600 text-white rounded-lg font-bold uppercase text-[9px] tracking-wider hover:bg-red-700 transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2 animate-pulse"
                                             >
                                                 <span className="w-2 h-2 rounded-full bg-white animate-ping" />
-                                                Join Live Class
+                                                JOIN NOW
                                             </a>
                                         ) : (
                                             <button

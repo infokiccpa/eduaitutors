@@ -288,7 +288,15 @@ const getLiveClassEmailHTML = (leadName: string, classLink: string, grade: strin
 </html>
 `;
 
-export async function sendLiveClassLinkEmail(to: string, name: string, grade: string, subjects: string[], accessCode: string) {
+export async function sendLiveClassLinkEmail(
+    to: string,
+    name: string,
+    grade: string,
+    subjects: string[],
+    accessCode: string,
+    videoUrl?: string,
+    startTime?: string
+) {
     try {
         if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
             console.warn('⚠️ SMTP not configured. Live Class link not sent to:', to);
@@ -296,7 +304,17 @@ export async function sendLiveClassLinkEmail(to: string, name: string, grade: st
         }
 
         const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://eduaitutors.com/';
-        const classLink = `${baseUrl}/live-classroom?grade=${encodeURIComponent(grade)}&subject=${encodeURIComponent(subjects[0])}&token=${accessCode}`;
+
+        // Build classroom link with all parameters
+        let classLink = `${baseUrl}/live-classroom?grade=${encodeURIComponent(grade)}&subject=${encodeURIComponent(subjects[0])}&token=${accessCode}`;
+
+        if (videoUrl) {
+            classLink += `&videoUrl=${encodeURIComponent(videoUrl)}`;
+        }
+
+        if (startTime) {
+            classLink += `&startTime=${encodeURIComponent(startTime)}`;
+        }
 
         const mailOptions = {
             from: `"EduAI Live Classes" <${process.env.SMTP_USER}>`,
