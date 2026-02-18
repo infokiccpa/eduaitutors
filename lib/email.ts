@@ -306,7 +306,7 @@ export async function sendLiveClassLinkEmail(
         const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://eduaitutors.com/';
 
         // Build classroom link with all parameters
-        let classLink = `${baseUrl}/live-classroom?grade=${encodeURIComponent(grade)}&subject=${encodeURIComponent(subjects[0])}&token=${accessCode}`;
+        let classLink = `${baseUrl}/live-classroom?public=true&grade=${encodeURIComponent(grade)}&subject=${encodeURIComponent(subjects[0])}&token=${accessCode}`;
 
         if (videoUrl) {
             classLink += `&videoUrl=${encodeURIComponent(videoUrl)}`;

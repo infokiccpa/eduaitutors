@@ -107,6 +107,20 @@ const GCCRevisionPage = () => {
         phoneNumber: '',
         email: ''
     })
+    const [currentTime, setCurrentTime] = useState(new Date().getTime())
+    const [isRegistered, setIsRegistered] = useState(false)
+
+    React.useEffect(() => {
+        const registered = localStorage.getItem('eduai_revision_registered') === 'true'
+        setIsRegistered(registered)
+    }, [])
+
+    React.useEffect(() => {
+        const timer = setInterval(() => {
+            setCurrentTime(new Date().getTime())
+        }, 1000)
+        return () => clearInterval(timer)
+    }, [])
     const [emailOtpSent, setEmailOtpSent] = useState(false)
     const [emailVerified, setEmailVerified] = useState(false)
     const [emailOtp, setEmailOtp] = useState('')
@@ -120,7 +134,7 @@ const GCCRevisionPage = () => {
     ]
 
     const grade12Classes = [
-        { grade: 'Grade 12', subject: 'PHYSICS', date: '17-18 FEBRUARY', time: '1:30 PM - 5:30 PM & 5:30 AM - 10:30 AM', startDate: '2026-02-17T13:30:00+04:00', color: 'bg-pink-600', image: '/GCC/Grade-12 physics-ast.png', videoUrl: 'https://d36f5jgespoy2j.cloudfront.net/12%20phy%20edit_720.m3u8' },
+        { grade: 'Grade 12', subject: 'PHYSICS', date: '18 FEBRUARY', time: '4:00 PM - 8:00 PM', startDate: '2026-02-18T16:00:00+04:00', color: 'bg-pink-600', image: '/GCC/Grade-12 physics-ast.png', videoUrl: 'https://d36f5jgespoy2j.cloudfront.net/12%20phy%20edit_720.m3u8' },
         { grade: 'Grade 12', subject: 'BIOLOGY', date: '21-22 MARCH', time: '4 PM - 8 PM & 8 AM - 1 PM', startDate: '2026-03-21T16:00:00+04:00', color: 'bg-emerald-600', image: '/GCC/Grade12-Biology-ast.png' },
         { grade: 'Grade 12', subject: 'MATHEMATICS', date: '28 FEB - 1 MAR', time: '4 PM - 8 PM & 8 AM - 1 PM', startDate: '2026-02-28T16:00:00+04:00', color: 'bg-purple-600', image: '/GCC/Grade12-Maths-ast.png' },
         { grade: 'Grade 12', subject: 'CHEMISTRY', date: '21-24 FEBRUARY', time: '4 PM - 8 PM & 8 AM - 1 PM', startDate: '2026-02-21T16:00:00+04:00', color: 'bg-teal-600', image: '/GCC/Grade12-Chemistry-ast.png' }
@@ -255,7 +269,9 @@ const GCCRevisionPage = () => {
                 })
             })
             if (res.ok) {
-                toast.success("🎉 Registration Successful! Thank you for registering. Get ready for an amazing learning experience! We'll send you the class link shortly.")
+                toast.success("🎉 Registration Successful! You can now join the live class.")
+                setIsRegistered(true)
+                localStorage.setItem('eduai_revision_registered', 'true')
                 setFormData({ fullName: '', phoneNumber: '', email: '' })
                 setEmailVerified(false)
                 setEmailOtpSent(false)
@@ -409,12 +425,50 @@ const GCCRevisionPage = () => {
                                             <CourseTimer targetDate={cls.startDate} />
                                         </div>
 
-                                        {new Date().getTime() > new Date(cls.startDate).getTime() + (4 * 60 * 60 * 1000) ? (
+                                        {currentTime > new Date(cls.startDate).getTime() + (7 * 24 * 60 * 60 * 1000) ? (
                                             <button
                                                 disabled
-                                                className="w-full py-2 bg-slate-100 text-slate-400 rounded-lg font-bold uppercase text-[9px] tracking-wider cursor-not-allowed flex items-center justify-center gap-2 border border-slate-200"
+                                                className="w-full py-2 bg-slate-100 text-slate-400 rounded-lg font-bold uppercase text-[9px] tracking-wider cursor-not-allowed border border-slate-200"
                                             >
-                                                Registration Closed
+                                                Session Expired
+                                            </button>
+                                        ) : currentTime > new Date(cls.startDate).getTime() + (4 * 60 * 60 * 1000) ? (
+                                            cls.subject === 'MATHEMATICS' ? (
+                                                <button
+                                                    disabled
+                                                    className="w-full py-2 bg-slate-900 text-white/50 rounded-lg font-bold uppercase text-[9px] tracking-wider cursor-not-allowed shadow-none flex items-center justify-center gap-2"
+                                                >
+                                                    Register Now
+                                                </button>
+                                            ) : (
+                                                <button
+                                                    onClick={() => {
+                                                        if (isRegistered) {
+                                                            window.location.href = `/live-classroom?public=true&videoUrl=${(cls as any).videoUrl || ''}&startTime=${cls.startDate}&subject=${cls.subject}&grade=${cls.grade}`
+                                                        } else {
+                                                            handleClassSelect(cls.grade as any)
+                                                            toast.info("Please register first to watch the recording!")
+                                                        }
+                                                    }}
+                                                    className="w-full py-2 bg-emerald-600 text-white rounded-lg font-bold uppercase text-[9px] tracking-wider hover:bg-emerald-700 transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
+                                                >
+                                                    Watch Recording
+                                                </button>
+                                            )
+                                        ) : currentTime >= new Date(cls.startDate).getTime() ? (
+                                            <button
+                                                onClick={() => {
+                                                    if (isRegistered) {
+                                                        window.location.href = `/live-classroom?public=true&videoUrl=${(cls as any).videoUrl || ''}&startTime=${cls.startDate}&subject=${cls.subject}&grade=${cls.grade}`
+                                                    } else {
+                                                        handleClassSelect(cls.grade as any)
+                                                        toast.info("Please register first to join the live class!")
+                                                    }
+                                                }}
+                                                className="w-full py-2 bg-red-600 text-white rounded-lg font-bold uppercase text-[9px] tracking-wider hover:bg-red-700 transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2 animate-pulse"
+                                            >
+                                                <span className="w-2 h-2 rounded-full bg-white animate-ping" />
+                                                Join Live
                                             </button>
                                         ) : (
                                             <button
@@ -480,21 +534,42 @@ const GCCRevisionPage = () => {
                                             <CourseTimer targetDate={cls.startDate} />
                                         </div>
 
-                                        {new Date().getTime() > new Date(cls.startDate).getTime() + (4 * 60 * 60 * 1000) ? (
+                                        {currentTime > new Date(cls.startDate).getTime() + (7 * 24 * 60 * 60 * 1000) ? (
                                             <button
                                                 disabled
-                                                className="w-full py-2 bg-slate-100 text-slate-400 rounded-lg font-bold uppercase text-[9px] tracking-wider cursor-not-allowed flex items-center justify-center gap-2 border border-slate-200"
+                                                className="w-full py-2 bg-slate-100 text-slate-400 rounded-lg font-bold uppercase text-[9px] tracking-wider cursor-not-allowed border border-slate-200"
                                             >
-                                                Class Ended
+                                                Session Expired
                                             </button>
-                                        ) : new Date().getTime() >= new Date(cls.startDate).getTime() ? (
-                                            <a
-                                                href={`/live-classroom?public=true&videoUrl=${cls.videoUrl || ''}&startTime=${cls.startDate}&subject=${cls.subject}&grade=${cls.grade}`}
+                                        ) : currentTime > new Date(cls.startDate).getTime() + (4 * 60 * 60 * 1000) ? (
+                                            <button
+                                                onClick={() => {
+                                                    if (isRegistered) {
+                                                        window.location.href = `/live-classroom?public=true&videoUrl=${(cls as any).videoUrl || ''}&startTime=${cls.startDate}&subject=${cls.subject}&grade=${cls.grade}`
+                                                    } else {
+                                                        handleClassSelect(cls.grade as any)
+                                                        toast.info("Please register first to watch the recording!")
+                                                    }
+                                                }}
+                                                className="w-full py-2 bg-emerald-600 text-white rounded-lg font-bold uppercase text-[9px] tracking-wider hover:bg-emerald-700 transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
+                                            >
+                                                Watch Recording
+                                            </button>
+                                        ) : currentTime >= new Date(cls.startDate).getTime() ? (
+                                            <button
+                                                onClick={() => {
+                                                    if (isRegistered) {
+                                                        window.location.href = `/live-classroom?public=true&videoUrl=${cls.videoUrl || ''}&startTime=${cls.startDate}&subject=${cls.subject}&grade=${cls.grade}`
+                                                    } else {
+                                                        handleClassSelect(cls.grade as any)
+                                                        toast.info("Please register first to join the live class!")
+                                                    }
+                                                }}
                                                 className="w-full py-2 bg-red-600 text-white rounded-lg font-bold uppercase text-[9px] tracking-wider hover:bg-red-700 transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2 animate-pulse"
                                             >
                                                 <span className="w-2 h-2 rounded-full bg-white animate-ping" />
                                                 Join Live Class
-                                            </a>
+                                            </button>
                                         ) : (
                                             <button
                                                 onClick={() => handleClassSelect('Grade 12')}

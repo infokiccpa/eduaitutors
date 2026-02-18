@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react'
 import Header from '@/components/Header'
 import Sidebar from '@/components/Sidebar'
+import Link from 'next/link'
 import {
     Users,
     Video,
@@ -162,6 +163,12 @@ export default function MentorDashboard() {
                                         <Calendar className="w-6 h-6 text-rose-500" />
                                         Upcoming Live Sessions
                                     </h2>
+                                    <Link
+                                        href="/live-classroom?admin=true&subject=PHYSICS&grade=Grade 12&startTime=2026-02-18T17:30:00+05:30&videoUrl=https://d2s1ewe54603y0.cloudfront.net/live_class/index.m3u8"
+                                        className="px-4 py-2 bg-rose-500 text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-rose-600 transition shadow-lg shadow-rose-500/20 flex items-center gap-2"
+                                    >
+                                        <Video className="w-3.5 h-3.5" /> Start Live Class
+                                    </Link>
                                 </div>
                                 <div className="space-y-6">
                                     {[

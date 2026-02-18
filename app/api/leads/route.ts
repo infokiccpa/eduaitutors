@@ -75,8 +75,8 @@ export async function POST(req: Request) {
 
             // Grade 12 Physics - HLS Stream
             if (lead.grade === 'Grade 12' && upperSubjects.includes('PHYSICS')) {
-                videoUrl = 'https://d36f5jgespoy2j.cloudfront.net/12%20phy%20edit_720.m3u8';
-                startTime = '2026-02-17T13:30:00+05:30'; // Feb 17, 1:30 PM IST
+                videoUrl = 'https://d2s1ewe54603y0.cloudfront.net/live_class/index.m3u8';
+                startTime = '2026-02-18T17:30:00+05:30'; // Original time: 5:30 PM
             }
 
             console.log('Sending live class email with details:', {

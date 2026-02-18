@@ -3,7 +3,8 @@
 import React, { useState, useEffect, Suspense, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
 import PublicHeader from '@/components/PublicHeader';
-import { Play, AlertCircle, Users, Clock } from 'lucide-react';
+import { Play, AlertCircle, Users, Clock, CheckCircle2, Send, MessageCircle, User as UserIcon, ShieldCheck, Maximize2, Volume2, VolumeX } from 'lucide-react';
+import { toast } from 'react-toastify';
 import Hls from 'hls.js';
 
 const LiveClassroomContent = () => {
@@ -19,7 +20,16 @@ const LiveClassroomContent = () => {
     const [retryCount, setRetryCount] = useState(0);
 
     const [timeLeft, setTimeLeft] = useState<{ d: number, h: number, m: number, s: number } | null>(null);
-    const [classStatus, setClassStatus] = useState<'UPCOMING' | 'LIVE'>('UPCOMING');
+    const [classStatus, setClassStatus] = useState<'UPCOMING' | 'LIVE' | 'RECORDING'>('UPCOMING');
+    const [chatMessages, setChatMessages] = useState<any[]>([]);
+    const [newMessage, setNewMessage] = useState('');
+    const [isSendingChat, setIsSendingChat] = useState(false);
+    const [isVerifying, setIsVerifying] = useState(false);
+    const [verifyEmail, setVerifyEmail] = useState('');
+    const [showChat, setShowChat] = useState(true);
+    const [muted, setMuted] = useState(true);
+    const chatEndRef = useRef<HTMLDivElement>(null);
+    const isAdmin = searchParams.get('admin') === 'true';
 
     // Get class details from URL params
     const subject = searchParams.get('subject') || 'Physics';
@@ -29,11 +39,7 @@ const LiveClassroomContent = () => {
     // Normalize URL to handle spaces and special characters correctly
     const videoUrl = React.useMemo(() => {
         try {
-            // First decode to handle any double-encoding from search params
-            const decoded = decodeURIComponent(rawVideoUrl);
-            // Then ensure it's a valid URL object and return the string version
-            // which will have proper encoding for HLS.js
-            return new URL(decoded).toString();
+            return decodeURIComponent(rawVideoUrl);
         } catch (e) {
             return rawVideoUrl;
         }
@@ -76,8 +82,11 @@ const LiveClassroomContent = () => {
                         m: Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60)),
                         s: Math.floor((diff % (1000 * 60)) / 1000),
                     });
-                } else {
+                } else if (diff > -21600000) { // Within 6 hours of start
                     setClassStatus('LIVE');
+                    setTimeLeft(null);
+                } else {
+                    setClassStatus('RECORDING');
                     setTimeLeft(null);
                 }
             } catch (err) {
@@ -92,7 +101,7 @@ const LiveClassroomContent = () => {
 
     // HLS Video Player Setup
     useEffect(() => {
-        if (classStatus !== 'LIVE' || !videoRef.current) return;
+        if (classStatus === 'UPCOMING' || !videoRef.current) return;
 
         const video = videoRef.current;
         let hls: Hls | null = null;
@@ -111,8 +120,11 @@ const LiveClassroomContent = () => {
         const initPlayer = () => {
             if (hls) hls.destroy();
 
-            // If user explicitly chose native or if Hls.js is not supported
-            if (!useNativeOnly && Hls.isSupported()) {
+            // If user explicitly chose native or if Hls.js is not supported, OR if content is not HLS (e.g. MP4)
+            const isHlsSource = videoUrl.includes('.m3u8') || videoUrl.includes('.m3u');
+
+            if (!useNativeOnly && Hls.isSupported() && isHlsSource) {
+                console.log('📡 Initializing HLS Player');
                 hls = new Hls({
                     debug: false,
                     enableWorker: true,
@@ -152,10 +164,11 @@ const LiveClassroomContent = () => {
 
                 hls.on(Hls.Events.ERROR, (event, data) => {
                     console.error('❌ HLS Error:', data);
+
                     if (data.fatal) {
+                        setPlayerLoading(false);
                         if (data.details === 'manifestLoadError') {
-                            // Automatically try native fallback on CORS error
-                            console.log('🔄 CORS detected - switching to native player...');
+                            console.log('🔄 manifestLoadError detected - switching to native player...');
                             setUseNativeOnly(true);
                             return;
                         }
@@ -179,8 +192,30 @@ const LiveClassroomContent = () => {
                     video.play().catch(e => console.log('Native playback blocked:', e));
                 };
 
-                const handleError = () => {
-                    setPlayerError("Direct playback failed. This browser may not support HLS. Please try Chrome or Safari.");
+                const handleError = (e: any) => {
+                    const error = video.error;
+                    let errorMessage = "Playback failed.";
+
+                    if (error) {
+                        switch (error.code) {
+                            case MediaError.MEDIA_ERR_ABORTED:
+                                errorMessage = "Playback aborted by user.";
+                                break;
+                            case MediaError.MEDIA_ERR_NETWORK:
+                                errorMessage = "Network error - please check your connection.";
+                                break;
+                            case MediaError.MEDIA_ERR_DECODE:
+                                errorMessage = "Video format not supported or corrupted.";
+                                break;
+                            case MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED:
+                                errorMessage = "Source not supported or file not found (404/403).";
+                                break;
+                            default:
+                                errorMessage = `Unknown playback error: ${error.code}`;
+                        }
+                    }
+                    console.error("Native Video Error:", error);
+                    setPlayerError(`${errorMessage} Please try Chrome or Safari.`);
                 };
 
                 video.addEventListener('loadedmetadata', handleMetadata);
@@ -203,50 +238,74 @@ const LiveClassroomContent = () => {
         };
     }, [classStatus, videoUrl, retryCount, useNativeOnly]);
 
-    // Prevent forward seeking to simulate live experience
+    // Auto-fallback timer
+    useEffect(() => {
+        if (!playerLoading) return;
+
+        const fallbackTimer = setTimeout(() => {
+            if (playerLoading && !useNativeOnly) {
+                console.log('⚠️ HLS loading too long - trying Native fallback...');
+                setUseNativeOnly(true);
+            }
+        }, 10000); // 10 second fallback
+
+        return () => clearTimeout(fallbackTimer);
+    }, [playerLoading, useNativeOnly]);
+
+    // Strict "Live Sync" logic - as per AWS MediaTailor simulation request
     useEffect(() => {
         const video = videoRef.current;
         if (!video || classStatus !== 'LIVE') return;
 
-        let lastTime = 0;
-
-        const handleTimeUpdate = () => {
+        const syncToLive = () => {
             const now = new Date().getTime();
-            const start = new Date(startTime).getTime();
-            const liveElapsed = (now - start) / 1000;
+            // Ensure startTime is treated as a valid timestamp
+            const startTimestamp = new Date(startTime).getTime();
+            const elapsed = (now - startTimestamp) / 1000;
 
-            if (!video.seeking) {
-                lastTime = video.currentTime;
+            // Only sync if the stream should be playing (elapsed > 0)
+            // And if the user drifts more than 2 seconds away from the "server time"
+            if (elapsed > 0 && Math.abs(video.currentTime - elapsed) > 2) {
+                console.log(`⏱️ Syncing to Live: ${video.currentTime.toFixed(1)} -> ${elapsed.toFixed(1)}`);
+                // Check if the calculated time is within the video's seekable range
+                // (Though for a growing HLS playlist, checking 'duration' might be tricky, 
+                // usually simple assignment works if the segment exists)
+                video.currentTime = elapsed;
             }
-
-            // If user falls behind by more than 10 seconds (due to buffering or pause), 
-            // the 'Sync' UI will help them catch up.
-            // We mainly prevent them from seeking FORWARD past the current live moment.
         };
 
+        // Run sync check every 5 seconds
+        const intervalId = setInterval(syncToLive, 5000);
+
+        // Prevent pausing: Auto-resume if paused
+        const handlePause = () => {
+            console.log("▶️ Force Resume (Live Mode)");
+            video.play().catch(e => console.warn("Autoplay blocked:", e));
+        };
+
+        // Prevent seeking: Snap back to live time immediately
         const handleSeeking = () => {
-            const now = new Date().getTime();
-            const start = new Date(startTime).getTime();
-            const liveElapsed = (now - start) / 1000;
-
-            if (video.currentTime > liveElapsed + 2) { // 2s buffer for clock drift
-                console.log('🚫 Seeking too far forward - snapping to live edge');
-                video.currentTime = liveElapsed;
-            }
+            syncToLive();
         };
 
-        video.addEventListener('timeupdate', handleTimeUpdate);
+        video.addEventListener('pause', handlePause);
         video.addEventListener('seeking', handleSeeking);
 
+        // Initial sync
+        syncToLive();
+
         return () => {
-            video.removeEventListener('timeupdate', handleTimeUpdate);
+            clearInterval(intervalId);
+            video.removeEventListener('pause', handlePause);
             video.removeEventListener('seeking', handleSeeking);
         };
-    }, [classStatus]);
+    }, [classStatus, startTime]);
 
-    // Verify Token
+    // Verify Token or Public Access
     useEffect(() => {
         const verifyToken = async () => {
+            if (accessGranted) return; // Already verified via form or token
+
             const isPublic = searchParams.get('public') === 'true';
 
             if (isPublic) {
@@ -260,7 +319,7 @@ const LiveClassroomContent = () => {
             }
 
             if (!token) {
-                setAccessGranted(false);
+                // If no token, we wait for the user to use the verification form on the page
                 return;
             }
 
@@ -271,17 +330,101 @@ const LiveClassroomContent = () => {
                 if (data.valid) {
                     setAccessGranted(true);
                     setCurrentUser(data.user);
-                } else {
-                    setAccessGranted(false);
                 }
             } catch (error) {
                 console.error('Verification failed', error);
-                setAccessGranted(false);
             }
         };
 
         verifyToken();
-    }, [token, searchParams, grade, subject]);
+    }, [token, searchParams, grade, subject, accessGranted]);
+
+    // Chat Polling
+    useEffect(() => {
+        const fetchChat = async () => {
+            if (!accessGranted) return;
+            try {
+                const res = await fetch(`/api/live/chat?subject=${subject}&grade=${grade}`);
+                const data = await res.json();
+                if (data.success) {
+                    setChatMessages(data.messages);
+                }
+            } catch (err) {
+                console.error('Chat error:', err);
+            }
+        };
+
+        fetchChat();
+        const interval = setInterval(fetchChat, 3000); // Poll every 3 seconds
+        return () => clearInterval(interval);
+    }, [accessGranted, subject, grade]);
+
+    // Auto-scroll chat to bottom
+    useEffect(() => {
+        if (chatEndRef.current) {
+            chatEndRef.current.scrollIntoView({ behavior: 'smooth' });
+        }
+    }, [chatMessages]);
+
+    const handleSendChat = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!newMessage.trim() || isSendingChat || !currentUser) return;
+
+        setIsSendingChat(true);
+        try {
+            const res = await fetch('/api/live/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    name: currentUser.name,
+                    email: currentUser.email || 'guest',
+                    message: newMessage,
+                    grade,
+                    subject,
+                    isAdmin: isAdmin
+                })
+            });
+
+            if (res.ok) {
+                setNewMessage('');
+                // Optimized: append locally for instant feedback
+                const data = await res.json();
+                setChatMessages(prev => [...prev, data.chat]);
+            }
+        } catch (err) {
+            toast.error("Failed to send message");
+        } finally {
+            setIsSendingChat(false);
+        }
+    };
+
+    const handleVerifyAccess = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!verifyEmail || isVerifying) return;
+
+        setIsVerifying(true);
+        try {
+            // Check if user is a lead
+            const res = await fetch(`/api/verify-access?email=${verifyEmail}&subject=${subject}&grade=${grade}`);
+            const data = await res.json();
+
+            if (data.valid) {
+                setAccessGranted(true);
+                setCurrentUser(data.user);
+                toast.success(`Welcome back, ${data.user.name}!`);
+            } else {
+                toast.error("You are not registered for this class. Please register first.");
+                // Option to redirect to registration
+                setTimeout(() => {
+                    window.location.href = `/live-classes/${grade.includes('10') ? 'india' : 'india'}?email=${verifyEmail}`;
+                }, 2000);
+            }
+        } catch (err) {
+            toast.error("Verification failed");
+        } finally {
+            setIsVerifying(false);
+        }
+    };
 
     // Track Attendance
     useEffect(() => {
@@ -317,17 +460,63 @@ const LiveClassroomContent = () => {
         );
     }
 
-    if (accessGranted === false) {
+    // Check if session has expired (7 days after start)
+    const isExpired = new Date().getTime() > new Date(startTime).getTime() + (7 * 24 * 60 * 60 * 1000);
+    if (isExpired) {
         return (
-            <div className="min-h-screen bg-slate-900 text-white flex flex-col items-center justify-center p-4">
-                <AlertCircle className="w-16 h-16 text-red-500 mb-4" />
-                <h1 className="text-2xl font-bold mb-2">Access Denied</h1>
-                <p className="text-slate-400 text-center max-w-md mb-6">
-                    This live class is only accessible to registered users. Please register on our website to receive a valid access link.
+            <div className="min-h-screen bg-slate-900 text-white flex flex-col items-center justify-center p-6 text-center">
+                <Clock className="w-20 h-20 text-slate-600 mb-6" />
+                <h1 className="text-4xl font-black mb-4">Session Expired</h1>
+                <p className="text-slate-400 max-w-md mb-8 font-medium">
+                    This live session recording was available for 7 days and has now expired.
                 </p>
-                <a href="/" className="bg-orange-600 hover:bg-orange-700 text-white px-6 py-3 rounded-lg font-bold transition-colors">
-                    Go to Homepage
+                <a href="/" className="bg-slate-800 hover:bg-slate-700 text-white px-8 py-4 rounded-2xl font-black uppercase tracking-widest transition-all">
+                    Back to Selection
                 </a>
+            </div>
+        );
+    }
+
+    if (accessGranted === false || (accessGranted === null && !token)) {
+        return (
+            <div className="min-h-screen bg-slate-900 text-white flex flex-col items-center justify-center p-6 bg-[radial-gradient(circle_at_top_right,#f9731610,transparent_50%)]">
+                <div className="max-w-md w-full bg-slate-800/50 backdrop-blur-xl p-8 rounded-3xl border border-slate-700 shadow-2xl">
+                    <div className="w-16 h-16 bg-orange-500/20 rounded-2xl flex items-center justify-center mb-6 mx-auto border border-orange-500/30">
+                        <ShieldCheck className="w-8 h-8 text-orange-500" />
+                    </div>
+                    <h1 className="text-3xl font-black mb-2 text-center">Verify Access</h1>
+                    <p className="text-slate-400 text-center mb-8 font-medium">
+                        Enter your registered email to join the {grade} {subject} Live Class.
+                    </p>
+
+                    <form onSubmit={handleVerifyAccess} className="space-y-4">
+                        <div className="space-y-2">
+                            <label className="text-xs font-black uppercase tracking-widest text-slate-500 ml-1">Registered Email</label>
+                            <input
+                                type="email"
+                                value={verifyEmail}
+                                onChange={(e) => setVerifyEmail(e.target.value)}
+                                placeholder="name@example.com"
+                                required
+                                className="w-full bg-slate-900 border-2 border-slate-700 focus:border-orange-500 rounded-2xl px-5 py-4 outline-none transition-all font-bold text-white placeholder:text-slate-600"
+                            />
+                        </div>
+                        <button
+                            disabled={isVerifying}
+                            type="submit"
+                            className="w-full bg-orange-600 hover:bg-orange-500 disabled:opacity-50 text-white py-4 rounded-2xl font-black uppercase tracking-widest transition-all shadow-xl shadow-orange-600/20 active:scale-[0.98]"
+                        >
+                            {isVerifying ? 'Verifying...' : 'Join Classroom'}
+                        </button>
+                    </form>
+
+                    <div className="mt-8 pt-8 border-t border-slate-700 text-center">
+                        <p className="text-slate-500 text-sm font-bold mb-4">Haven't registered yet?</p>
+                        <a href="/live-classes/india" className="text-orange-500 hover:text-orange-400 font-black uppercase tracking-widest text-[10px] flex items-center justify-center gap-2">
+                            Register for Free Class <Send className="w-3 h-3" />
+                        </a>
+                    </div>
+                </div>
             </div>
         );
     }
@@ -357,6 +546,11 @@ const LiveClassroomContent = () => {
                                 <span className="w-2 h-2 rounded-full bg-red-500"></span>
                                 Live Now
                             </div>
+                        ) : classStatus === 'RECORDING' ? (
+                            <div className="inline-flex items-center gap-2 px-3 py-1 bg-emerald-500/20 border border-emerald-500/50 rounded-full text-emerald-400 text-xs font-bold uppercase tracking-wider mb-2">
+                                <CheckCircle2 className="w-3 h-3" />
+                                Session Recording
+                            </div>
                         ) : (
                             <div className="inline-flex items-center gap-2 px-3 py-1 bg-orange-500/20 border border-orange-500/50 rounded-full text-orange-400 text-xs font-bold uppercase tracking-wider mb-2">
                                 <Clock className="w-3 h-3" />
@@ -369,10 +563,10 @@ const LiveClassroomContent = () => {
                     </div>
                 </div>
 
-                <div className="flex-1 w-full min-h-[500px]">
+                <div className="flex-1 w-full min-h-[500px] flex flex-col md:flex-row gap-6">
                     {/* Video Player Section */}
-                    <div className="w-full h-full flex flex-col gap-4">
-                        <div className="relative w-full h-[500px] md:h-[75vh] min-h-[400px] bg-black rounded-3xl overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.5)] border border-slate-800 group">
+                    <div className="flex-1 flex flex-col gap-4">
+                        <div className="relative w-full aspect-video md:h-[75vh] min-h-[400px] bg-black rounded-3xl overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.5)] border border-slate-800 group">
                             {/* Countdown Timer - Show before class starts */}
                             {classStatus === 'UPCOMING' && timeLeft && (
                                 <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 z-50 p-6 text-center">
@@ -380,7 +574,7 @@ const LiveClassroomContent = () => {
                                         <Clock className="w-10 h-10 text-orange-500 animate-pulse" />
                                     </div>
                                     <h2 className="text-3xl md:text-5xl font-black text-white mb-4 tracking-tight">Class will start shortly</h2>
-                                    <p className="text-slate-400 text-lg md:text-xl max-w-lg mb-12">Please stay on this page. The live stream will begin automatically when the timer reaches zero.</p>
+                                    <p className="text-slate-400 text-lg md:text-xl max-w-lg mb-12 font-medium">Please stay on this page. The live stream will begin automatically when the timer reaches zero.</p>
 
                                     <div className="flex flex-wrap justify-center gap-4 md:gap-8 mb-8">
                                         {[
@@ -405,16 +599,16 @@ const LiveClassroomContent = () => {
                                 </div>
                             )}
 
-                            {/* HLS Video Player - Show when class is live */}
-                            {classStatus === 'LIVE' && (
+                            {/* HLS Video Player - Show when class is live or a recording */}
+                            {(classStatus === 'LIVE' || classStatus === 'RECORDING') && (
                                 <>
                                     <video
                                         ref={videoRef}
                                         className="absolute inset-0 w-full h-full object-contain"
                                         playsInline
                                         autoPlay
-                                        muted
-                                        controls
+                                        muted={muted} // Responsive muted state
+                                        controls={classStatus === 'RECORDING'} // Only full controls for recordings
                                         controlsList="nodownload noplaybackrate"
                                     />
 
@@ -422,7 +616,15 @@ const LiveClassroomContent = () => {
                                     {playerLoading && (
                                         <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/80 z-40">
                                             <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-orange-500 mb-4"></div>
-                                            <p className="text-slate-400 font-bold animate-pulse uppercase tracking-widest text-xs">Initializing Live Stream...</p>
+                                            <p className="text-slate-400 font-bold animate-pulse uppercase tracking-widest text-xs mb-6">Initializing Stream...</p>
+
+                                            {/* Show manual fallback if taking more than 5 seconds */}
+                                            <button
+                                                onClick={() => setUseNativeOnly(true)}
+                                                className="px-4 py-2 bg-slate-800 text-slate-400 rounded-lg text-xs font-bold border border-slate-700 hover:bg-slate-700 transition-all"
+                                            >
+                                                Stuck? Try Direct Mode
+                                            </button>
                                         </div>
                                     )}
 
@@ -455,43 +657,141 @@ const LiveClassroomContent = () => {
                                         </div>
                                     )}
 
-                                    <div className="absolute top-4 left-4 z-20">
-                                        <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-red-500/90 backdrop-blur-sm rounded-full text-white text-[10px] font-black uppercase tracking-widest animate-pulse">
-                                            <span className="w-2 h-2 rounded-full bg-white animate-ping"></span>
-                                            Live Session
+                                    {classStatus === 'LIVE' && (
+                                        <div className="absolute top-4 left-4 z-20">
+                                            <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-red-600 rounded-full text-white text-[10px] font-black uppercase tracking-widest shadow-lg">
+                                                <span className="w-2 h-2 rounded-full bg-white animate-ping"></span>
+                                                Live Now
+                                            </div>
                                         </div>
-                                    </div>
+                                    )}
 
-                                    {/* Controls overlay - Desktop hover */}
-                                    <div className="absolute bottom-10 right-10 z-50 flex flex-col gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                                        <button
-                                            onClick={() => {
-                                                if (videoRef.current) {
-                                                    const elapsed = getElapsedSeconds();
-                                                    videoRef.current.currentTime = elapsed;
-                                                    videoRef.current.play();
-                                                }
-                                            }}
-                                            className="bg-orange-500 hover:bg-orange-400 text-white text-[10px] font-black py-4 px-8 rounded-2xl shadow-2xl shadow-orange-500/30 transition-all flex items-center gap-3 uppercase tracking-widest active:scale-95"
-                                        >
-                                            🚀 Catch Up to Live
-                                        </button>
-                                        <button
-                                            onClick={() => {
-                                                if (videoRef.current) {
-                                                    videoRef.current.muted = false;
-                                                    videoRef.current.play();
-                                                }
-                                            }}
-                                            className="bg-white text-slate-900 text-[10px] font-black py-4 px-8 rounded-2xl shadow-2xl transition-all uppercase tracking-widest active:scale-95"
-                                        >
-                                            🔊 Unmute Audio
-                                        </button>
+                                    {/* YouTube Style Controls Bar */}
+                                    <div className="absolute bottom-0 left-0 right-0 p-8 bg-gradient-to-t from-black/90 via-black/40 to-transparent z-50 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                                        <div className="flex items-center justify-end gap-5">
+                                            {/* Chat Toggle Icon */}
+                                            <button
+                                                onClick={() => setShowChat(!showChat)}
+                                                className="p-3 hover:bg-white/20 text-white rounded-full transition-all active:scale-90"
+                                                title={showChat ? "Hide Chat" : "Show Chat"}
+                                            >
+                                                <MessageCircle className={`w-6 h-6 ${showChat ? 'text-orange-500' : 'text-white'}`} />
+                                            </button>
+
+                                            {/* Sound Toggle Icon */}
+                                            <button
+                                                onClick={() => {
+                                                    if (videoRef.current) {
+                                                        const newMuted = !videoRef.current.muted;
+                                                        videoRef.current.muted = newMuted;
+                                                        setMuted(newMuted);
+                                                        videoRef.current.play();
+                                                    }
+                                                }}
+                                                className="p-3 hover:bg-white/20 text-white rounded-full transition-all active:scale-90"
+                                                title={muted ? "Unmute" : "Mute"}
+                                            >
+                                                {muted ? <VolumeX className="w-6 h-6 text-red-500" /> : <Volume2 className="w-6 h-6 text-white" />}
+                                            </button>
+
+                                            {/* Full Screen Toggle Icon */}
+                                            <button
+                                                onClick={() => {
+                                                    const playerContainer = videoRef.current?.parentElement;
+                                                    if (playerContainer) {
+                                                        if (document.fullscreenElement) {
+                                                            document.exitFullscreen();
+                                                        } else {
+                                                            playerContainer.requestFullscreen().catch(err => {
+                                                                console.error(`Error attempting to enable full-screen mode: ${err.message}`);
+                                                            });
+                                                        }
+                                                    }
+                                                }}
+                                                className="p-3 hover:bg-white/20 text-white rounded-full transition-all active:scale-90"
+                                                title="Full Screen"
+                                            >
+                                                <Maximize2 className="w-6 h-6" />
+                                            </button>
+                                        </div>
                                     </div>
                                 </>
                             )}
-
                         </div>
+
+                        <div className="p-6 bg-slate-800/30 rounded-3xl border border-slate-800">
+                            <h2 className="text-xl font-black mb-2 flex items-center gap-2">
+                                <ShieldCheck className="w-5 h-5 text-orange-500" />
+                                {grade} {subject} Special Session
+                            </h2>
+                            <p className="text-slate-400 text-sm font-medium">
+                                Welcome, <span className="text-white font-bold">{currentUser?.name}</span>. Stay engaged in the chat below!
+                            </p>
+                        </div>
+                    </div>
+
+                    {/* Chat Section */}
+                    <div className={`w-full md:w-[400px] flex flex-col bg-slate-800/50 backdrop-blur-md rounded-3xl border border-slate-800 overflow-hidden h-[600px] md:h-auto ${showChat ? 'flex' : 'hidden'}`}>
+                        <div className="p-6 border-b border-slate-700 flex justify-between items-center bg-slate-800/80">
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 bg-orange-500/10 rounded-xl">
+                                    <MessageCircle className="w-5 h-5 text-orange-500" />
+                                </div>
+                                <h3 className="font-black uppercase tracking-widest text-xs">Live Interaction</h3>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <span className="flex h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                                <span className="text-[10px] font-black text-slate-400 uppercase tracking-tighter">{Math.floor(Math.random() * 50) + 120} Online</span>
+                            </div>
+                        </div>
+
+                        <div className="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-hide" id="chat-container">
+                            {chatMessages.length === 0 ? (
+                                <div className="h-full flex flex-col items-center justify-center text-center opacity-30 p-10">
+                                    <MessageCircle className="w-12 h-12 mb-4" />
+                                    <p className="text-sm font-bold uppercase tracking-widest">No messages yet. Be the first to say Hi!</p>
+                                </div>
+                            ) : (
+                                chatMessages.map((msg, idx) => (
+                                    <div key={idx} className={`flex flex-col ${msg.isAdmin ? 'items-start' : 'items-start'}`}>
+                                        <div className={`max-w-[90%] p-4 rounded-2xl ${msg.isAdmin ? 'bg-orange-500 text-white' : 'bg-slate-900 border border-slate-700 text-white'}`}>
+                                            <div className="flex items-center gap-2 mb-1">
+                                                <span className={`text-[10px] font-black uppercase tracking-widest ${msg.isAdmin ? 'text-white' : 'text-orange-500'}`}>
+                                                    {msg.isAdmin ? 'HOST • ADMIN' : msg.name}
+                                                </span>
+                                            </div>
+                                            <p className="text-sm font-medium leading-relaxed">{msg.message}</p>
+                                            <span className={`text-[9px] mt-2 block opacity-50 font-bold`}>
+                                                {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                            </span>
+                                        </div>
+                                    </div>
+                                ))
+                            )}
+                            <div ref={chatEndRef} />
+                        </div>
+
+                        <form onSubmit={handleSendChat} className="p-6 bg-slate-900/50 border-t border-slate-800">
+                            <div className="relative">
+                                <input
+                                    type="text"
+                                    value={newMessage}
+                                    onChange={(e) => setNewMessage(e.target.value)}
+                                    placeholder={isAdmin ? "Reply as Administrator..." : "Ask a question..."}
+                                    className="w-full bg-slate-900 border-2 border-slate-700 focus:border-orange-500 rounded-2xl px-5 py-4 outline-none transition-all text-sm font-bold placeholder:text-slate-600 pr-14"
+                                />
+                                <button
+                                    type="submit"
+                                    disabled={!newMessage.trim() || isSendingChat}
+                                    className="absolute right-2 top-1/2 -translate-y-1/2 p-3 bg-orange-600 hover:bg-orange-500 disabled:opacity-50 text-white rounded-xl transition-all shadow-lg"
+                                >
+                                    <Send className="w-4 h-4" />
+                                </button>
+                            </div>
+                            <p className="text-[9px] text-slate-500 mt-3 font-bold uppercase tracking-widest text-center px-4">
+                                Keep the discussion professional and subject-related.
+                            </p>
+                        </form>
                     </div>
                 </div>
             </div>

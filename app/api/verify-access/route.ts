@@ -8,9 +8,10 @@ export async function GET(req: Request) {
     try {
         const { searchParams } = new URL(req.url);
         const token = searchParams.get('token');
+        const email = searchParams.get('email');
 
-        if (!token) {
-            return NextResponse.json({ valid: false, message: 'Token missing' }, { status: 400 });
+        if (!token && !email) {
+            return NextResponse.json({ valid: false, message: 'Token or Email missing' }, { status: 400 });
         }
 
         try {
@@ -19,15 +20,20 @@ export async function GET(req: Request) {
             console.error("❌ Database Connection Error:", dbErr);
             return NextResponse.json({
                 valid: false,
-                message: "Database connection failed.",
-                error: dbErr instanceof Error ? dbErr.message : String(dbErr)
+                message: "Database connection failed."
             }, { status: 500 });
         }
-        // Check if a lead exists with this access code
-        const lead = await Lead.findOne({ accessCode: token });
+
+        let lead;
+        if (token) {
+            lead = await Lead.findOne({ accessCode: token });
+        } else if (email) {
+            // Find lead by email. Smart matching to handle case sensitivity.
+            lead = await Lead.findOne({ email: { $regex: new RegExp(`^${email}$`, 'i') } });
+        }
 
         if (!lead) {
-            return NextResponse.json({ valid: false, message: 'Invalid token' }, { status: 401 });
+            return NextResponse.json({ valid: false, message: 'Not found' }, { status: 404 });
         }
 
         return NextResponse.json({

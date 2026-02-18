@@ -5,7 +5,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ArrowLeft, ArrowRight, Mail, Lock, Eye, EyeOff, User, CheckCircle, ShieldCheck } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Mail, Lock, Eye, EyeOff, User, CheckCircle, ShieldCheck, GraduationCap } from 'lucide-react'
 import { toast } from 'react-toastify'
 import { signIn, useSession } from 'next-auth/react'
 
@@ -400,6 +400,16 @@ function LoginForm() {
                 {isLogin ? 'Sign up free' : 'Sign in here'}
               </button>
             </p>
+
+            <div className="mt-8 pt-8 border-t border-slate-100">
+              <Link
+                href="/tutor-login"
+                className="inline-flex items-center gap-2 text-slate-400 hover:text-primary-600 transition-colors group"
+              >
+                <GraduationCap className="w-4 h-4" />
+                <span className="text-xs font-black uppercase tracking-widest">Are you an educator? Tutor Login</span>
+              </Link>
+            </div>
           </div>
         </motion.div>
       </div>
